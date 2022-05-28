@@ -4,6 +4,7 @@ host = "http://deveasyvolt.uplus.co.kr"
 chost = "http://devevspcharger.uplus.co.kr"
 # host = "http://localhost:5000"
 # chost = "http://localhost:5000"
+meter_value = 0
 
 urls = {
     "login": host+"/adm/cmm-api/v1/AUTH/login",
@@ -71,12 +72,31 @@ api_params = {"authorize":{
             "meterValue":[
                 {
                     "timestamp":"",
-                    "meterValue":[{
-                        "measurand":"meter",
-                        "phase":"L1",
-                        "unit":"A",
-                        "value":"0", # Wh Value
-                    }]
+                    "sampledValue":[
+                        {
+                            "measurand":"Current.Import",
+                            "phase":"L1",
+                            "unit":"A",
+                            "value":"0", # Wh Value
+                        },{
+                            "measurand":"Voltage",
+                            "phase":"L1",
+                            "unit":"V",
+                            "value":"0.0"
+                        },{
+                            "measurand":"Energy.Active.Import.Register",
+                            "unit":"Wh",
+                            "value":"0"
+                        },{
+                            "measurand":"SoC",
+                            "unit":"%",
+                            "value":"0",
+                        },{
+                            "measurand":"Power.Active.Import",
+                            "unit":"W",
+                            "value":"0.0"
+                        }
+                    ]
             }]
             
         }, "stopTransaction":{

@@ -7,8 +7,9 @@
 
 Todo:
    TODO리스트를 기재
-    * Logger.
+    * 비정상 케이스에 대한 프로세스 적용
     * ID값들 자동화 처리 필요
+
 
 """
 
@@ -28,12 +29,10 @@ local_var = {
     "vendorId":None,
     "connectorId":None,
     "status":None,
-    "value":None, # Kw MeterValue
     "idTag":None,
-    "X-EVC-MDL": None,
+    "X-EVC-MDL": "LGE-123",
     "X-EVC-BOX": None,
-    "X-EVC-OS": None,
-    "X-EVC-CON": None,
+    "X-EVC-OS": "Linux 5.5",
 }
 
 
@@ -45,7 +44,6 @@ setter = {
     "transactionId": lambda x: local_var[x],
     "vendorId": lambda x: local_var[x],
     "connectorId": lambda x: local_var[x],
-    "value": lambda x: local_var[x],
 }
 
 def disp_header(command):
@@ -75,18 +73,8 @@ class Charger(Server):
 
     """
     def __init__(self, station_id, charger_id, connector_id):
-        self.station_id = station_id
-        self.charger_id = charger_id
-        self.connector_id = connector_id
-        self.transactionId = 0
-        self.x_evc_box = charger_id
-        self.x_evc_mdl = "CHG-150"
-        self.x_evc_os = "Linux 1.6"
-        self.x_evc_con = connector_id
-        self.status = "Available"
-        self.accessToken = None
-
-        self.local_var = {}
+        local_var["X-EVC-BOX"] = station_id+charger_id
+        local_var["connectorId"] = connector_id
 
     def update_var(self, *args, **kwargs):
         for item in kwargs:
@@ -142,7 +130,7 @@ class Charger(Server):
           None.
         """
         newParam = {}
-
+        found_meter = False
         for item in parameter.items():
             if type(item[1]) is dict :
                 newParam[item[0]] = self.touch_parameter(item[1])
@@ -210,10 +198,10 @@ class Charger(Server):
         def set_header(header, headers):
             get_headers = {
                         'X-EVC-RI': datetime.now().strftime('%Y%m%d%H%M%S%f')+"_"+command,
-                        'X-EVC-MDL': self.x_evc_mdl,
-                        'X-EVC-BOX': self.x_evc_box,
-                        'X-EVC-OS': self.x_evc_os,
-                        'X-EVC-CON': self.x_evc_con,
+                        'X-EVC-MDL': local_var["X-EVC-MDL"],
+                        'X-EVC-BOX': local_var["X-EVC-BOX"],
+                        'X-EVC-OS': local_var["X-EVC-OS"],
+                        'X-EVC-CON': local_var["connectorId"],
                         }
             for h in headers :
                 header[h] = get_headers[h]
@@ -224,7 +212,7 @@ class Charger(Server):
 
         disp_header(command)
         header = props.headers
-        header["Authorization"] = "Bearer {}".format(self.accessToken)
+        # header["Authorization"] = "Bearer {}".format(self.accessToken)
         header = set_header(header, props.api_headers[command])
         data = json.dumps(parameter)
 
@@ -274,14 +262,15 @@ def start_charger():
         ["statusNotification", "Available"],
         ["heartbeat"]
     ]
+
     charger = Charger("123123123123", "123123123", "01")
-    charger.login("test", "test1")
+    # charger.login("test", "test1")
     for task in operation_sequence:
         if task[0] == "statusNotification" :
             charger.make_request(REQ_POST, command=task[0], status=task[1])
         elif task[0]== "meterValue":
             for i in range(1, 10):
-                local_var['value'] = 1000 * i
+                props.meter_value = 1000 * i
                 charger.make_request(REQ_POST, command="meterValues")
                 time.sleep(1)
         else:
