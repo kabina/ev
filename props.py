@@ -1,9 +1,10 @@
 from datetime import datetime
 
-# host = "http://deveasyvolt.uplus.co.kr"
-# chost = "http://devevspcharger.uplus.co.kr"
-host = "http://localhost:5000"
-chost = "http://localhost:5000"
+host = "http://deveasyvolt.uplus.co.kr"
+chost = "http://devevspcharger.uplus.co.kr"
+# host = "http://localhost:5000"
+# chost = "http://localhost:5000"
+
 urls = {
     "login": host+"/adm/cmm-api/v1/AUTH/login",
     "chl_info":host+"/adm/api/v1/CHL/retrieveChannelInfo",
@@ -47,16 +48,7 @@ api_post_status={
         "meterValues":"Charging",
 }
 
-api_params = {"chl_info":{
-            "chnId" : "",
-            "bizConsChnlCd" : "",
-            "jobTrstCd":"",
-            "copNm":"",
-            "clntCd":"",
-            "brno":"",
-            "coRegNo":"",
-            "cntcStusCd":""
-        }, "authorize":{
+api_params = {"authorize":{
             "idTag":"1234567890123456",
         }, "prepare":{
             "connectorId":"01",
@@ -67,12 +59,12 @@ api_params = {"chl_info":{
                 "rv":11,
             },
             "status":"Available",
-            "timestamp":datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z")+"Z",
+            "timestamp":"",
             "vendorErrorCode":"",
             "vendorId":"LGE"
         }, "meterValues":{
             "connectorId":"01",
-            "transactionId":"123123123",
+            "transactionId":"",
             "meterValue":[
                 {
                 "measurand":"01",
@@ -90,10 +82,10 @@ api_params = {"chl_info":{
             "idTag":"1234567890123456",
             "meterStop":"200",
             "reason":"Finished",
-            "timestamp":datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z")+"Z",
+            "timestamp":"",
             "transactionId":"123123123",
             "transactionData":[{
-            "timestamp":datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z")+"Z",
+            "timestamp":"",
             "sampledValue":[
                 {
                 "measurand":"01",
@@ -111,7 +103,7 @@ api_params = {"chl_info":{
             "idTag":"1234567890123456",
             "connectorId":"01",
             "meterStart":"222222",
-            "timestamp":datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z")+"Z",
+            "timestamp":"",
         }, "heartbeat":{
             "vendorId":"LGE",
             "messageId":"heartbeat",
@@ -132,4 +124,44 @@ api_params = {"chl_info":{
             "rssi":"23124124",
             "entityId":"M2M2442"
         }
+}
+
+"""
+ 충전기에서 CS로 보낼 API별로 수신해야 하는 응답중 포함해야 하는 변수, 필수여부, 
+ 로컬 변수에 저장 해야 하는 키 값을 지정
+"""
+
+api_response = {
+    "boot":{
+        "currentTime":["M",None], # should be changed to real
+        "interval":["M","heartbeatInterval"],
+        "status":["M",None],
+    },
+    "authorize": {
+        "idTagInfo": {
+            "expiryDate": ["O", None],
+            "parentIdTag": ["O", None],
+            "status": ["M", None]
+        },
+    },
+    "startTransaction":{
+        "idtaginfo":{
+            "expiryDate":["O", None],
+            "parentIdTag":["O",None],
+            "status":["M", None]
+        },
+        "transactionId":["M", "transactionId"]
+    }, "stopTransaction":{
+        "idtaginfo":{
+            "expiryDate":["O", None],
+            "parentIdTag":["O", None],
+            "status":["M", None]
+        },
+    },
+    "heartbeat":{
+        "status":["M", None],
+        "data":{
+            "currentTime":["M", None]
+        }
+    }
 }
