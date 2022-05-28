@@ -25,6 +25,10 @@ REQ_GET = 2
 local_var = {
     "transactionId":None,
     "heartbeatInterval":None,
+    "vendorId":None,
+    "connectorId":None,
+    "status":None,
+    "value":None, # Kw MeterValue
     "idTag":None,
     "X-EVC-MDL": None,
     "X-EVC-BOX": None,
@@ -36,6 +40,13 @@ local_var = {
 logger = Logger()
 evlogger = logger.initLogger()
 
+setter = {
+    "timestamp": lambda x: datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z") + "Z",
+    "transactionId": lambda x: local_var[x],
+    "vendorId": lambda x: local_var[x],
+    "connectorId": lambda x: local_var[x],
+    "value": lambda x: local_var[x],
+}
 
 def disp_header(command):
     print("#"*50)
@@ -92,24 +103,53 @@ class Charger(Server):
     def send_response(response):
         print(response)
 
-    def touch_parameter(self, parameter):
+    def ltouch_parameter(self, parameter):
+        """Request시 정의된 JSON내 변경이 필요한 항목을 탐색하여 수정함.
+        timestamp나 transactionId등을 해당 시점에 맞는 값으로 변경 해 줌
+
+        Args:
+          parameter: CS로 송신되는 파라메터값, Recursive하게 들어옴.
+
+        Returns:
+          변경된 Parameter.
+
+        Raises:
+          None.
+        """
+        newParam = []
+        for item in parameter:
+            if type(item) is dict:
+                newParam.append(self.touch_parameter(item))
+            elif type(item) is list:
+                newParam.append(self.ltouch_parameter(item))
+            elif item in setter:
+                newParam.append(setter[item](item))
+            else:
+                newParam.append(item)
+        return newParam
+
+    def touch_parameter(self, parameter, meterValue = None):
+        """Request시 정의된 JSON내 변경이 필요한 항목을 탐색하여 수정함.
+        timestamp나 transactionId등을 해당 시점에 맞는 값으로 변경 해 줌
+
+        Args:
+          parameter: CS로 송신되는 파라메터값, Recursive하게 들어옴.
+
+        Returns:
+          변경된 Parameter.
+
+        Raises:
+          None.
+        """
         newParam = {}
 
-        setter = {
-            "timestamp":lambda x : datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z")+"Z",
-            "transactionId":lambda x : local_var(x)
-        }
         for item in parameter.items():
-            if type(item[1]) is type(dict) :
+            if type(item[1]) is dict :
                 newParam[item[0]] = self.touch_parameter(item[1])
+            elif type(item[1]) is list:
+                newParam[item[0]] = self.ltouch_parameter(item[1])
             elif item[0] in setter :
-                print(item[0])
-                print(setter[item[0]](item[0]))
                 newParam[item[0]] = setter[item[0]](item[0])
-            # elif item[0] == "timestamp":
-            #     newParam["timestamp"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z")+"Z"
-            # elif item[0] == "transactionId":
-            #     newParam["transactionId"] = local_var["transactionId"]
             else:
                 newParam[item[0]]=item[1]
         return newParam
@@ -136,6 +176,8 @@ class Charger(Server):
                     self.check_response(diff_from_items[to_item[0]], to_item[1])
                 else:
                     evlogger.error("No Response Item '{}'".format(to_item[0]))
+            elif type(to_item[1]) is list:
+                pass
             elif to_item[0] in diff_from_items:
                 if to_item[1][1] :
                     update_var(to_item[1][1], diff_from_items[to_item[0]])
@@ -146,7 +188,7 @@ class Charger(Server):
                     evlogger.warning("No Response Item '{}'(Optional)".format(to_item[0]))
 
 
-    def make_request(self, request_type, command=None):
+    def make_request(self, request_type, command=None, status=None):
         """충전기에서 CS(Central System)으로 보낼 데이터를 생성 하고 송신 후 Response를 수신 함
         수신된 Response는 포맷/필수여부/로컬변수 저장등을 위해 check_response함수 호출
 
@@ -176,8 +218,10 @@ class Charger(Server):
             for h in headers :
                 header[h] = get_headers[h]
             return header
-        print(parameter)
         parameter = self.touch_parameter(parameter)
+        if status is not None:
+            parameter["status"] = status
+
         disp_header(command)
         header = props.headers
         header["Authorization"] = "Bearer {}".format(self.accessToken)
@@ -190,13 +234,10 @@ class Charger(Server):
         evlogger.info(data)
 
         if request_type == REQ_POST:
-            response = requests.post(url, headers=header,
-                                     data=data)
-            response = response.json()
+            response = requests.post(url, headers=header, data=data)
         else:
-            response = requests.get(url, headers=header,
-                                    data=data)
-            response = response.json()
+            response = requests.get(url, headers=header,  data=data)
+        response = response.json()
 
         evlogger.info("<"*10+"수신 DATA"+"<"*10)
         evlogger.info(response)
@@ -206,29 +247,47 @@ class Charger(Server):
         else:
             self.check_response(response, props.api_response[command])
 
-        self.status = props.api_post_status[command]
+        if status is not None :
+            local_var["status"] = status
 
+def start_charger():
+    """충전기 기본 시뮬레이트 실행. 기본 정상 프로시저에 따른 충전 수행
+    Args:
 
-charger = Charger("123123123123", "123123123", "01")
-charger.login("test", "test1")
-charger.make_request(REQ_POST, command = "boot")
-time.sleep(3)
-charger.make_request(REQ_POST, command = "authorize")
+    Returns:
+      None.
 
-time.sleep(3)
-charger.make_request(REQ_POST, command = "prepare")
-time.sleep(3)
-charger.make_request(REQ_POST, command = "startTransaction")
-time.sleep(3)
-charger.make_request(REQ_POST, command = "meterValues")
-time.sleep(3)
-charger.make_request(REQ_POST, command = "stopTransaction")
-time.sleep(3)
-charger.make_request(REQ_POST, command = "heartbeat")
+    Raises:
+      None.
+    """
+    operation_sequence =[
+        ["boot"],
+        ["statusNotification","Available"],
+        ["authorize"],
+        ["statusNotification","Preparing"],
+        ["dataTransferTariff"],
+        ["startTransaction"],
+        ["statusNotification","Charging"],
+        ["meterValue"],
+        ["stopTransaction"],
+        ["statusNotification", "Finishing"],
+        ["statusNotification", "Available"],
+        ["heartbeat"]
+    ]
+    charger = Charger("123123123123", "123123123", "01")
+    charger.login("test", "test1")
+    for task in operation_sequence:
+        if task[0] == "statusNotification" :
+            charger.make_request(REQ_POST, command=task[0], status=task[1])
+        elif task[0]== "meterValue":
+            for i in range(1, 10):
+                local_var['value'] = 1000 * i
+                charger.make_request(REQ_POST, command="meterValues")
+                time.sleep(1)
+        else:
+            charger.make_request(REQ_POST, command=task[0])
+        time.sleep(1)
 
-evlogger.info(local_var)
-# items = charger.response["data"][0].items()
-# items = sorted(items, key=lambda x : x[0])
-# for s in items :
-#     print(s[0], s[1])
-# dicts = {i[0]:i[1] for i in items} 
+    evlogger.info(local_var)
+
+start_charger()

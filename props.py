@@ -12,9 +12,11 @@ urls = {
     "boot":chost+"/cs/api/v1/OCPP/bootNotification/999332",
     "heartbeat":chost+"/cs/api/v1/OCPP/dataTransfer/999332",
     "prepare":chost+"/cs/api/v1/OCPP/statusNotification/999332",
+    "dataTransferTariff":chost+"/cs/api/v1/OCPP/dataTransferTariff/999332",
     "startTransaction":chost+"/cs/api/v1/OCPP/startTransaction/999332",
     "stopTransaction":chost+"/cs/api/v1/OCPP/stopTransaction/999332",
     "meterValues":chost+"/cs/api/v1/OCPP/meterValues/999332",
+    "statusNotification": chost + "/cs/api/v1/OCPP/statusNotification/999332",
 }
 headers={
         'Content-type':'application/json', 
@@ -36,20 +38,21 @@ api_headers={
     ["X-EVC-RI","X-EVC-BOX"],
         "meterValues":
     ["X-EVC-RI","X-EVC-BOX"],
-}
-
-api_post_status={
-        "authorize":"Preparing",
-        "boot":"Available",
-        "heartbeat":"Available",
-        "prepare":"Available",
-        "stopTransaction":"Available",
-        "startTransaction":"Charging",
-        "meterValues":"Charging",
+        "dataTransferTariff":
+    ["X-EVC-RI", "X-EVC-BOX", "X-EVC-MDL"],
+        "statusNotification":
+    ["X-EVC-RI", "X-EVC-BOX", "X-EVC-MDL"],
 }
 
 api_params = {"authorize":{
             "idTag":"1234567890123456",
+        }, "statusNotification": {
+            "connectorId": "01",
+            "errorCode": "NoError",
+            "status": "Available",
+            "timestamp": "",
+            "vendorErrorCode": "",
+            "vendorId": "LGE"
         }, "prepare":{
             "connectorId":"01",
             "errorCode":"NoError",
@@ -67,15 +70,13 @@ api_params = {"authorize":{
             "transactionId":"",
             "meterValue":[
                 {
-                "measurand":"01",
-                "phase":"01",
-                "unit":"01",
-                "value":"01",
-            },{
-                "measurand":"02",
-                "phase":"02",
-                "unit":"02",
-                "value":"02",
+                    "timestamp":"",
+                    "meterValue":[{
+                        "measurand":"meter",
+                        "phase":"L1",
+                        "unit":"A",
+                        "value":"0", # Wh Value
+                    }]
             }]
             
         }, "stopTransaction":{
@@ -123,6 +124,14 @@ api_params = {"authorize":{
             "meterSerialNumber":"CNTER23123123",
             "rssi":"23124124",
             "entityId":"M2M2442"
+        }, "dataTransferTariff":{
+            "venderId":"LG",
+            "messageId":"Tariff",
+            "data":{
+                "connectorId":"01",
+                "idTag":"",
+                "timestamp":""
+            }
         }
 }
 
@@ -157,11 +166,25 @@ api_response = {
             "parentIdTag":["O", None],
             "status":["M", None]
         },
+    },"dataTransferTariff":{
+        "status":"Accepted",
+        "tariff":[{
+            "idTag":["2022-05-28T00:00:00Z"],
+            "startAt":["2022-05-28T00:00:00Z", None],
+            "endAt":["2022-05-28T00:00:00Z", None],
+            "price":[300, None]
+        }],
     },
     "heartbeat":{
         "status":["M", None],
         "data":{
             "currentTime":["M", None]
         }
+    },
+    "statusNotification":{
+
+    },
+    "meterValues":{
+
     }
 }
