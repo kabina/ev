@@ -45,4 +45,8 @@ normal_case = [
     ["heartbeat", None]
 ]
 ```
+위의 예제는 boot notification(reason:PowerUp) 후 충전기 상태를 Available로 바꾼 후, authorize로 카드 태깅이 이루어 진 후
+다시 상태를 Preparing으로 변경하고, 해당 idtag의 카드 기준의 tarfiff를 조회 한다.
+이후 transaction을 시작하여, 충전중(Charging) 상태로 변경하고 미터값을 반복해서 발생 시키고 끝나면 Finish상태로 바꾸면서 상태를 CS로 올린다.
+이후 다시 상태를 Available로 변경하고 이후 heartbeat을 발생 시킨다.
 상헤한 케이스 작성 방법 등은 scenario.py를 참조 바라며, parameter, response의 변경이 있는 경우 props.py의 수정이 필요하다.
