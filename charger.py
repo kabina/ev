@@ -34,6 +34,8 @@ local_var = {
     "X-EVC-MDL": "LGE-123",
     "X-EVC-BOX": None,
     "X-EVC-OS": "Linux 5.5",
+    "tariff" : [],
+    "responseFailure": False,
 }
 
 # meterValue용 파라메터 변수 들 (기본값)
@@ -226,9 +228,26 @@ class Charger(Server):
             else:
                 if(to_item[1][0]=="M"):
                     evlogger.error("No Response Item '{}'".format(to_item[0]))
+                    update_var("responseFailure", True)
                 else:
                     evlogger.warning("No Response Item '{}'(Optional)".format(to_item[0]))
 
+    def post_process(self, response, command):
+        """충전기는 CS(Central System)로 부터 받은 응답을 후처리 함
+
+        Args:
+          response : CS로 부터 받은 응답
+          command : 충전기에서 서버로 보낸 명령(authorize, boot, startTransactionRequest ... )
+
+        Returns:
+          None.
+
+        Raises:
+          None.
+        """
+        # 사용자 요금정보(Tariff) 처리
+        if command == "dataTransferTariff" :
+            local_var["tariff"] = response["data"]["tariff"]
 
     def make_request(self, command=None, status=None):
         """충전기에서 CS(Central System)으로 보낼 데이터를 생성 하고 송신 후 Response를 수신 함
@@ -286,6 +305,10 @@ class Charger(Server):
             evlogger.warning("NO response checker for {}".format(command))
         else:
             self.check_response(response, props.api_response[command])
+
+        # 정상 Response를 받은 경우 아래 수행
+        if not local_var["responseFailure"]:
+            self.post_process(response, command)
 
         if status is not None :
             local_var["status"] = status
