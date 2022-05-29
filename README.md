@@ -50,3 +50,5 @@ normal_case = [
 이후 transaction을 시작하여, 충전중(Charging) 상태로 변경하고 미터값을 반복해서 발생 시키고 끝나면 Finish상태로 바꾸면서 상태를 CS로 올린다.
 이후 다시 상태를 Available로 변경하고 이후 heartbeat을 발생 시킨다.
 상헤한 케이스 작성 방법 등은 scenario.py를 참조 바라며, parameter, response의 변경이 있는 경우 props.py의 수정이 필요하다.
+
+## 주의 : 완성된 상태가 아니며, CS(Central System)과 서로 맞춰가며 테스트가 필요함
