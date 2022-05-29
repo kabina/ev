@@ -9,7 +9,7 @@ ev charger
 
 4개의 파일을 같은 폴더에 설치하고 위의 모듈을 설치 한 후 아래와 같이 실행 한다.
 
-` $ python charger.py
+~ $ python charger.py
 
 테스트 케이스는 scenario.py에 임의로 몇개가 지정 되어 있으며,
 해당 파일을 고쳐서 다양한 케이스를 시험 할 수 있다.
