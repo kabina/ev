@@ -23,3 +23,5 @@ ev charger
  - props.py에 지정된 url, host등을 참조하고, scenario의 이벤트 순서에 따라 송신할 header와 body를 만들어 전송한다.
  - 송신 후 response가 오면 해당 response의 적절성을 검사하고 누락된 정보 등을 noti해 준다.
  - 각 request event별로 request 송신 전/후 생성해야 하는 파라메터 및 충전기내에 저장해야 하는 상태정보 등을 처리한다.
+
+## 상세한 시험 시나리오 작성 방법 등은 scenario.py를 참조 바라며, parameter, response의 변경이 있는 경우 props.py의 수정이 필요하다.
