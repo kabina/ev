@@ -4,7 +4,6 @@ host = "http://deveasyvolt.uplus.co.kr"
 chost = "http://devevspcharger.uplus.co.kr"
 # host = "http://localhost:5000"
 # chost = "http://localhost:5000"
-meter_value = 0
 
 urls = {
     "login": host+"/adm/cmm-api/v1/AUTH/login",
@@ -101,7 +100,7 @@ api_params = {"authorize":{
             
         }, "stopTransaction":{
             "idTag":"1234567890123456",
-            "meterStop":"200",
+            "meterStop":"0",
             "reason":"Finished",
             "timestamp":"",
             "transactionId":"123123123",
@@ -208,3 +207,51 @@ api_response = {
 
     }
 }
+
+charger_status = [
+    "Available",
+    "Preparing",
+    "Charging",
+    "SuspendedEVSE",
+    "SuspendedEV",
+    "Finishing",
+    "Reserved",
+    "Unavailable",
+    "Faulted",
+]
+
+stop_reason = [
+    "Finished", "DeAuthorized", "EmergencyStop", "EVDisconnected", "HardReset",
+    "Local", "Reboot", "Remote", "UnlockCommand"
+]
+
+boot_reason = [
+    "ApplicationReset", "FirmwareUpdate", "LocalReset", "PowerUp", "scheduledReset",
+    "Triggered", "Unknown", "Watchdog"
+]
+
+charger_error = [
+    "ConnectorLockFailure",
+    "EVCommunicationError",
+    "GroundFailure",
+    "HighTemperature",
+    "InternalError",
+    "LocalListConflict",
+    "NoError",
+    "OtherError",
+    "OverCurrentFailure",
+    "OverVoltage",
+    "PowerMeterFailure",
+    "PowerSwitchFailure",
+    "ReaderFailure",
+    "ResetFailure",
+    "UnderVoltage",
+    "WeakSignal",
+    "onem2mfailure",
+    "modemreset",
+    "emswon",
+    "dooropenfailure",
+    "cpadfault",
+    "fgfault",
+    "mconfault",
+]
