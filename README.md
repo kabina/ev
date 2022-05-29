@@ -8,6 +8,7 @@ ev charger
  - colorlog
 
  4개의 파일을 같은 폴더에 설치하고 위의 모듈을 설치 한 후 아래와 같이 실행 한다.
+ app.py 파일은 향후 oneM2M을 통한 명령 수신을 가정한 충전기 서버 구성을 위한 것으로 무시.
 
 > $ python charger.py
 
