@@ -44,5 +44,5 @@ normal_case = [
     ["statusNotification", "Available"],
     ["heartbeat", None]
 ]
-
+'''
 상헤한 케이스 작성 방법 등은 scenario.py를 참조 바라며, parameter, response의 변경이 있는 경우 props.py의 수정이 필요하다.
