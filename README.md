@@ -27,4 +27,22 @@ ev charger
  - 송신 후 response가 오면 해당 response의 적절성을 검사하고 누락된 정보 등을 noti해 준다.
  - 각 request event별로 request 송신 전/후 생성해야 하는 파라메터 및 충전기내에 저장해야 하는 상태정보 등을 처리한다.
 
-### 상세한 시험 시나리오 작성 방법 등은 scenario.py를 참조 바라며, parameter, response의 변경이 있는 경우 props.py의 수정이 필요하다.
+### 상세한 시험 시나리오 작성 예제는 아래와 같다.
+'''
+#일반 충전/종료 케이스
+normal_case = [
+    ["boot", "PowerUp"],
+    ["statusNotification", "Available"],
+    ["authorize"],
+    ["statusNotification", "Preparing"],
+    ["dataTransferTariff"],
+    ["startTransaction"],
+    ["statusNotification", "Charging"],
+    ["meterValue"],
+    ["stopTransaction", "Finished"],
+    ["statusNotification", "Finishing"],
+    ["statusNotification", "Available"],
+    ["heartbeat", None]
+]
+
+상헤한 케이스 작성 방법 등은 scenario.py를 참조 바라며, parameter, response의 변경이 있는 경우 props.py의 수정이 필요하다.
