@@ -1,8 +1,10 @@
 # ev
 ev charger
 
-# 전기차 충전기 카드충전을 가정한 시뮬레이터
+## 전기차 충전기 카드충전을 가정한 시뮬레이터
 
+ 본 문서는 ocpp 1.6 기반 전기차 충전시스템의 충전기 모듈에 대한 시뮬레이션을 위해 만들어졌으며,
+ ocpp websoket 방식 전기차충전기가 아닌, http방식으로 변경한 충전기 시뮬레이터이다.
  사용 하기 위해 python 3.x를 설치 해야 하며, 추가로 설치 해야 하는 모듈은 아래와 같다.
  - requests
  - colorlog
@@ -19,9 +21,10 @@ ev charger
 
  기본 로그는 중계기로 보내는 header, body를 보여주고, response를 보여준다.
 
-# 개략적인 작동 절차는 다음과 같다.
- - props.py에 지정된 url, host등을 참조하고, scenario의 이벤트 순서에 따라 송신할 header와 body를 만들어 전송한다.
+## 개략적인 작동 절차는 다음과 같다.
+
+- props.py에 지정된 url, host등을 참조하고, scenario의 이벤트 순서에 따라 송신할 header와 body를 만들어 전송한다.
  - 송신 후 response가 오면 해당 response의 적절성을 검사하고 누락된 정보 등을 noti해 준다.
  - 각 request event별로 request 송신 전/후 생성해야 하는 파라메터 및 충전기내에 저장해야 하는 상태정보 등을 처리한다.
 
-## 상세한 시험 시나리오 작성 방법 등은 scenario.py를 참조 바라며, parameter, response의 변경이 있는 경우 props.py의 수정이 필요하다.
+### 상세한 시험 시나리오 작성 방법 등은 scenario.py를 참조 바라며, parameter, response의 변경이 있는 경우 props.py의 수정이 필요하다.
