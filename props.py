@@ -7,7 +7,6 @@ chost = "http://devevspcharger.uplus.co.kr"
 
 urls = {
     "login": host+"/adm/cmm-api/v1/AUTH/login",
-    "chl_info":host+"/adm/api/v1/CHL/retrieveChannelInfo",
     "authorize":chost+"/cs/api/v1/OCPP/authorize/999332",
     "boot":chost+"/cs/api/v1/OCPP/bootNotification/999332",
     "heartbeat":chost+"/cs/api/v1/OCPP/dataTransfer/999332",

@@ -40,7 +40,6 @@ normal_case = [
 ]
 
 # 충전 중 비상정지 후 리부팅
-#
 error_in_charge = [
     ["boot", "PowerUp"],
     ["statusNotification", "Available"],
@@ -60,11 +59,13 @@ error_after_boot = [
     ["statusNotification", "Unavailable", "InternalError"],
 ]
 
+# 부팅 후 대기 중
 heartbeat_after_boot = [
     ["boot", "LocalReset"],
     ["heartbeat", None]
 ]
 
+# 카드 태깅 후 충전 안하고 가버린 케이스
 no_charge_after_authorize = [
     ["boot", "PowerUp"],
     ["statusNotification", "Available"],

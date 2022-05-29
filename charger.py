@@ -35,6 +35,8 @@ local_var = {
     "X-EVC-BOX": None,
     "X-EVC-OS": "Linux 5.5",
 }
+
+# meterValue용 파라메터 변수 들 (기본값)
 sampled_value = {
     "cimport":12,  # Current.Import, 충전전류(A)
     "voltage": 220.0,  # Voltage
