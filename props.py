@@ -163,7 +163,7 @@ api_response = {
     "boot":{
         "currentTime":["M",None], # should be changed to real
         "interval":["M","heartbeatInterval"],
-        "status":["M",None],
+        "status":["M","status"],
     },
     "authorize": {
         "idTagInfo": {
@@ -187,12 +187,27 @@ api_response = {
         },
     },"dataTransferTariff":{
         "status":"Accepted",
-        "tariff":[{
-            "idTag":["2022-05-28T00:00:00Z"],
-            "startAt":["2022-05-28T00:00:00Z", None],
-            "endAt":["2022-05-28T00:00:00Z", None],
-            "price":[300, None]
-        }],
+        "data":{
+            "idTag": ["M", None],
+            "timestamp": ["M", None],
+            "tariff":[{
+                "startAt":["M", None],
+                "endAt":["M", None],
+                "price":["M", None]
+            },{
+                "startAt":["M", None],
+                "endAt":["M", None],
+                "price":["M", None]
+            },{
+                "startAt":["M", None],
+                "endAt":["M", None],
+                "price":["M", None]
+            }, {
+                "startAt":["M", None],
+                "endAt":["M", None],
+                "price":["M", None]
+            }]
+        },
     },
     "heartbeat":{
         "status":["M", None],

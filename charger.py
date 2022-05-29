@@ -21,14 +21,13 @@ import props, scenario
 import time
 from evlogger import Logger
 
-REQ_POST = 1
-REQ_GET = 2
 local_var = {
     "transactionId":None,
     "heartbeatInterval":5,
-    "vendorId":None,
+    "vendorId":"LGE",
     "connectorId":None,
     "status":None,
+    "errorCode":None,
     "boot_reason":None,
     "stopTransaction_reason":None,
     "idTag":None,
@@ -52,6 +51,8 @@ setter = {
     "transactionId": lambda x: local_var[x],
     "vendorId": lambda x: local_var[x],
     "connectorId": lambda x: local_var[x],
+    "status": lambda x: local_var[x],
+    "errorCode": lambda x: local_var[x],
     "boot_reason": lambda x: local_var[x],
     "stopTransaction_reason": lambda x: local_var[x],
 
@@ -172,7 +173,6 @@ class Charger(Server):
             if type(item[1]) is dict :
                 newParam[item[0]] = self.touch_parameter(item[1], command=command)
             elif type(item[1]) is list:
-                print(command+"_+_____")
                 if command == "meterValues" and item[0] == "sampledValue" :
                     newParam[item[0]] = self.get_sampledValue()
                 else:
@@ -202,30 +202,37 @@ class Charger(Server):
           None.
         """
         for to_item in diff_to_items.items():
+            # 데이터타입이 Dict인 경우
             if type(to_item[1]) is dict:
                 if to_item[0] in diff_from_items:
                     self.check_response(diff_from_items[to_item[0]], to_item[1])
                 else:
                     evlogger.error("No Response Item '{}'".format(to_item[0]))
-            # elif type(to_item[1]) is list:
-            #     print(to_item[1])
-            #     evlogger.info("CS Not ready for list in response")
+            # 데이터타입이 List인 경우 (반드시 Element는 1개 이상의 Dict임)
+            elif type(to_item[1]) is list and type(to_item[1][0]) is dict:
+                # tariff와 같이 하위 List Element내에 dict가 반복되는 데이터셋 처리
+                if to_item[0] in diff_from_items :
+                    for idx in range(len(to_item)):
+                        if diff_from_items[to_item[0]][idx] is dict :
+                            self.check_response(diff_from_items[to_item[0]][idx], to_item[1][idx])
+                        else:
+                            break
+                 # evlogger.info("CS Not ready for list in response")
             elif to_item[0] in diff_from_items:
                 if to_item[1][1] :
                     update_var(to_item[1][1], diff_from_items[to_item[0]])
             else:
-                if(to_item[1][1]=="M"):
+                if(to_item[1][0]=="M"):
                     evlogger.error("No Response Item '{}'".format(to_item[0]))
                 else:
                     evlogger.warning("No Response Item '{}'(Optional)".format(to_item[0]))
 
 
-    def make_request(self, request_type, command=None, status=None):
+    def make_request(self, command=None, status=None):
         """충전기에서 CS(Central System)으로 보낼 데이터를 생성 하고 송신 후 Response를 수신 함
         수신된 Response는 포맷/필수여부/로컬변수 저장등을 위해 check_response함수 호출
 
         Args:
-          request_type : POS or GET
           command : 충전기에서 서버로 보낼 명령(authorize, boot, startTransactionRequest ... )
           status : 명령 수행 후 변경 할 상태 지정(Available, Charging, Preparing, ... )
 
@@ -267,10 +274,7 @@ class Charger(Server):
         evlogger.info(">"*10+"송신 BODY"+">"*10)
         evlogger.info(data)
 
-        if request_type == REQ_POST:
-            response = requests.post(url, headers=header, data=data)
-        else:
-            response = requests.get(url, headers=header,  data=data)
+        response = requests.post(url, headers=header, data=data)
         response = response.json()
 
         evlogger.info("<"*10+"수신 DATA"+"<"*10)
@@ -296,30 +300,46 @@ def case_run(case):
       None.
     """
 
+    # param 1: 충전소
+    # param 2: 충전기
+    # param 3: Connector
+    # 케이스 별로 사전 상태변수 및 오류코드 세팅 후 Request 요청
+
     charger = Charger("123123123123", "123123123", "01")
     for task in case:
         if task[0] == "statusNotification" :
-            charger.make_request(REQ_POST, command=task[0], status=task[1])
+            if len(task) > 2: # 2nd element(arg)가 있는 경우만
+                update_var("errorCode", task[2])
+            charger.make_request(command=task[0], status=task[1])
         elif task[0] in ["boot", "stopTransaction"] :
-            # 종료(정지) 이유 등록
+            # 부팅, 종료(정지) 이유 등록
             update_var(task[0]+"_reason", task[1])
-            charger.make_request(REQ_POST, command=task[0])
+            charger.make_request(command=task[0])
         elif task[0]== "meterValue":
             for i in range(1, random.randrange(5,10)):
-                charger.make_request(REQ_POST, command="meterValues")
+                charger.make_request(command="meterValues")
                 time.sleep(1)
         elif task[0] == "heartbeat":
-            for i in range(1,10):
-                charger.make_request(REQ_POST, command="heartbeat")
-                time.sleep(local_var["heartbeatInterval"])
+            # heartbeat은 10번만 보냄
+            if task[1] is None:
+                for i in range(1, random.randrange(5,10)):
+                    charger.make_request(command="heartbeat")
+                    # heartbeatInterval에 따라 주기적으로 전송
+                    time.sleep(local_var["heartbeatInterval"])
+            elif task[1] == -1:
+                while True:
+                    charger.make_request(command="heartbeat")
+                    # heartbeatInterval에 따라 주기적으로 전송
+                    time.sleep(local_var["heartbeatInterval"])
         else:
-            charger.make_request(REQ_POST, command=task[0])
-        evlogger.info("="*20+"충저기 내부 변수상태"+"="*30)
+            charger.make_request(command=task[0])
+        evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*25)
         evlogger.info(local_var)
         evlogger.info("="*60)
         time.sleep(1)
 
-# case_run(scenario.normal_case)
+case_run(scenario.normal_case)
 # case_run(scenario.error_in_charge)
 # case_run(scenario.error_after_boot)
-case_run(scenario.heartbeat_after_boot)
+# case_run(scenario.heartbeat_after_boot)
+# case_run(scenario.no_charge_after_authorize)
