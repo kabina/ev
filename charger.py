@@ -26,8 +26,8 @@ local_var = {
     "heartbeatInterval":5,
     "vendorId":"LGE",
     "connectorId":None,
-    "status":None,
-    "errorCode":None,
+    "status":"Available",
+    "errorCode":"NoError",
     "boot_reason":None,
     "stopTransaction_reason":None,
     "idTag":None,
@@ -243,7 +243,7 @@ class Charger(Server):
           None.
 
         Raises:
-          None.
+          None.cmd
         """
         # 사용자 요금정보(Tariff) 처리
         if command == "dataTransferTariff" :
@@ -268,8 +268,15 @@ class Charger(Server):
         parameter=props.api_params[command]
         response=None
         def set_header(header, headers):
+            if command == "boot":
+                ri = "boot"
+            elif command == "dataTransferHeartbeat":
+                ri = "heartbeat"
+            else:
+                ri = "card"
             get_headers = {
-                        'X-EVC-RI': datetime.now().strftime('%Y%m%d%H%M%S%f')+"_"+command,
+
+                        'X-EVC-RI': datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]+"_"+ri,
                         'X-EVC-MDL': local_var["X-EVC-MDL"],
                         'X-EVC-BOX': local_var["X-EVC-BOX"],
                         'X-EVC-OS': local_var["X-EVC-OS"],
@@ -287,7 +294,9 @@ class Charger(Server):
         disp_header(command)
         header = props.headers
         # header["Authorization"] = "Bearer {}".format(self.accessToken)
-        header = set_header(header, props.api_headers[command])
+        if command in ["boot", "authorize", "dataTransferHeartbeat"]:
+            header = set_header(header, props.api_headers[command])
+
         data = json.dumps(parameter)
 
         evlogger.info(">"*10+"송신 헤더"+">"*10)
@@ -330,7 +339,7 @@ def case_run(case):
     # param 3: Connector
     # 케이스 별로 사전 상태변수 및 오류코드 세팅 후 Request 요청
 
-    charger = Charger("123123123123", "123123123", "01")
+    charger = Charger("01040001", "010400011001", "01")
     for task in case:
         if task[0] == "statusNotification" :
             if len(task) > 2: # 2nd element(arg)가 있는 경우만
@@ -344,16 +353,16 @@ def case_run(case):
             for i in range(1, random.randrange(5,10)):
                 charger.make_request(command="meterValues")
                 time.sleep(1)
-        elif task[0] == "heartbeat":
+        elif task[0] == "dataTransferHeartbeat":
             # heartbeat은 10번만 보냄
             if task[1] is None:
                 for i in range(1, random.randrange(5,10)):
-                    charger.make_request(command="heartbeat")
+                    charger.make_request(command=task[0])
                     # heartbeatInterval에 따라 주기적으로 전송
                     time.sleep(local_var["heartbeatInterval"])
             elif task[1] == -1:
                 while True:
-                    charger.make_request(command="heartbeat")
+                    charger.make_request(command=task[0])
                     # heartbeatInterval에 따라 주기적으로 전송
                     time.sleep(local_var["heartbeatInterval"])
         else:
@@ -363,6 +372,7 @@ def case_run(case):
         evlogger.info("="*60)
         time.sleep(1)
 
+# case_run(scenario.error_after_charging)
 case_run(scenario.normal_case)
 # case_run(scenario.error_in_charge)
 # case_run(scenario.error_after_boot)

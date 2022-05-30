@@ -26,7 +26,7 @@ Todo:
 ## 일반 충전/종료 케이스
 normal_case = [
     ["boot", "PowerUp"],
-    ["statusNotification", "Available"],
+    ["prepare"],
     ["authorize"],
     ["statusNotification", "Preparing"],
     ["dataTransferTariff"],
@@ -36,7 +36,7 @@ normal_case = [
     ["stopTransaction", "Finished"],
     ["statusNotification", "Finishing"],
     ["statusNotification", "Available"],
-    ["heartbeat", None]
+    ["dataTransferHeartbeat", None]
 ]
 
 # 충전 중 비상정지 후 리부팅
@@ -62,7 +62,7 @@ error_after_boot = [
 # 부팅 후 대기 중
 heartbeat_after_boot = [
     ["boot", "LocalReset"],
-    ["heartbeat", None]
+    ["dataTransferHeartbeat", None]
 ]
 
 # 카드 태깅 후 충전 안하고 가버린 케이스
@@ -72,4 +72,14 @@ no_charge_after_authorize = [
     ["authorize"],
     ["statusNotification", "Preparing"],
     ["dataTransferTariff"],
+]
+
+# 충전 시작 후 멈춤(Hang)
+error_after_charging = [
+    ["boot", "PowerUp"],
+    ["statusNotification", "Available"],
+    ["authorize"],
+    ["statusNotification", "Preparing"],
+    ["dataTransferTariff"],
+    ["startTransaction"],
 ]

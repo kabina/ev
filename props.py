@@ -9,7 +9,7 @@ urls = {
     "login": host+"/adm/cmm-api/v1/AUTH/login",
     "authorize":chost+"/cs/api/v1/OCPP/authorize/999332",
     "boot":chost+"/cs/api/v1/OCPP/bootNotification/999332",
-    "heartbeat":chost+"/cs/api/v1/OCPP/dataTransfer/999332",
+    "dataTransferHeartbeat":chost+"/cs/api/v1/OCPP/dataTransfer/999332",
     "prepare":chost+"/cs/api/v1/OCPP/statusNotification/999332",
     "dataTransferTariff":chost+"/cs/api/v1/OCPP/dataTransferTariff/999332",
     "startTransaction":chost+"/cs/api/v1/OCPP/startTransaction/999332",
@@ -27,7 +27,7 @@ api_headers={
     ["X-EVC-RI","X-EVC-BOX","X-EVC-MDL","X-EVC-OS"],
         "boot":
     ["X-EVC-RI","X-EVC-BOX","X-EVC-MDL","X-EVC-OS"],
-        "heartbeat":
+        "dataTransferHeartbeat":
     ["X-EVC-RI","X-EVC-BOX","X-EVC-CON"],
         "prepare":
     ["X-EVC-RI","X-EVC-BOX","X-EVC-CON"],
@@ -44,10 +44,15 @@ api_headers={
 }
 
 api_params = {"authorize":{
-            "idTag":"1234567890123456",
+            "idTag":"1010202030304040",
         }, "statusNotification": {
             "connectorId": "01",
             "errorCode": "NoError",
+            "info": [{
+                "reason": "None",
+                "cpv": 100,
+                "rv": 11,
+            }],
             "status": "Available",
             "timestamp": "",
             "vendorErrorCode": "",
@@ -123,14 +128,6 @@ api_params = {"authorize":{
             "connectorId":"01",
             "meterStart":"222222",
             "timestamp":"",
-        }, "heartbeat":{
-            "vendorId":"LGE",
-            "messageId":"heartbeat",
-            "data":{
-                "rssi":80,
-                "snr":1,
-                "rsrp":1,
-            }
         }, "boot":{
             "reason":"ApplicationReset",
             "chargePointSerialNumber":"C2313123131231232",
@@ -149,6 +146,14 @@ api_params = {"authorize":{
                 "connectorId":"01",
                 "idTag":"",
                 "timestamp":""
+            }
+        }, "dataTransferHeartbeat":{
+            "vendorId":"LGE",
+            "messageId":"heartbeat",
+            "data":{
+                "rssi":80,
+                "snr":1,
+                "rsrp":1,
             }
         }
 }
@@ -208,7 +213,7 @@ api_response = {
             }]
         },
     },
-    "heartbeat":{
+    "dataTransferHeartbeat":{
         "status":["M", None],
         "data":{
             "currentTime":["M", None]
