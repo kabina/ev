@@ -17,7 +17,8 @@ from abc import *
 from datetime import datetime
 import requests
 import json
-import props, scenario
+import props
+import scenario
 import time
 from evlogger import Logger
 
@@ -30,6 +31,8 @@ local_var = {
     "errorCode":"NoError",
     "boot_reason":None,
     "stopTransaction_reason":None,
+    "statusNotification_reason":None,
+    "meterStop":None,
     "idTag":None,
     "X-EVC-MDL": "LGE-123",
     "X-EVC-BOX": None,
@@ -56,16 +59,31 @@ setter = {
     "vendorId": lambda x: local_var[x],
     "connectorId": lambda x: local_var[x],
     "status": lambda x: local_var[x],
+    "meterStop": lambda x: local_var[x],
     "errorCode": lambda x: local_var[x],
     "boot_reason": lambda x: local_var[x],
     "stopTransaction_reason": lambda x: local_var[x],
-
+    "statusNotification_reason": lambda x: local_var[x],
 }
+
+
+def init_local_var():
+    fixed = [
+        "vendorId",
+        "X-EVC-MDL",
+        "X-EVC-OS",
+        "heartbeatInterval"
+    ]
+    for item in local_var:
+        if item not in fixed :
+            local_var[item] = None
+
 
 def disp_header(command):
     print("#"*50)
     print("############# - Request for {}".format(command))
     print("#"*50)
+
 
 def update_var(item, value):
     local_var[item] = value
@@ -73,11 +91,10 @@ def update_var(item, value):
 
 class Server(metaclass=ABCMeta):
     @abstractmethod
-    def send_response(self, response):
-        pass
 
     def make_request(self, request_type):
         pass
+
 
 class Charger(Server):
     """충전기 클래스 선언
@@ -94,7 +111,7 @@ class Charger(Server):
 
     def update_var(self, *args, **kwargs):
         for item in kwargs:
-            self.local_var[item[0]] = item[1]
+            local_var[item[0]] = item[1]
 
     def login(self, userid, password):
 
@@ -111,6 +128,7 @@ class Charger(Server):
         sampled_value["soc"] = sampled_value["soc"]
         sampled_value["paimport"] = (sampled_value["paimport"]+1000 +
                                     random.uniform(-1,1) ) if command == "meterValues" else 0
+        update_var("meterStop",sampled_value["paimport"])
 
     def get_sampledValue(self):
         self.meter_update(command="meterValues")
@@ -124,7 +142,7 @@ class Charger(Server):
             }, {"measurand": "SoC", "unit": "%", "value":
                 "{}".format(sampled_value["soc"],)
             }, {"measurand": "Power.Active.Import", "unit": "W", "value":
-                "{}".format(sampled_value["paimport"])
+                "{:.1f}".format(sampled_value["paimport"])
             }
         ]
         return value
@@ -181,7 +199,7 @@ class Charger(Server):
                     newParam[item[0]] = self.get_sampledValue()
                 else:
                     newParam[item[0]] = self.ltouch_parameter(item[1], command=command)
-            elif item[0] == "reason" and command in ["boot", "stopTransaction"]:
+            elif item[0] == "reason" and command in ["boot", "stopTransaction", "statusNotification"]:
                 newParam[item[0]] = setter[command+"_"+item[0]](command+"_"+item[0])
             elif item[0] in setter :
                 newParam[item[0]] = setter[item[0]](item[0])
@@ -340,10 +358,13 @@ def case_run(case):
     # 케이스 별로 사전 상태변수 및 오류코드 세팅 후 Request 요청
 
     charger = Charger("01040001", "010400011001", "01")
+    init_local_var()
+
     for task in case:
         if task[0] == "statusNotification" :
             if len(task) > 2: # 2nd element(arg)가 있는 경우만
                 update_var("errorCode", task[2])
+                update_var("statusNotification_reason", task[3])
             charger.make_request(command=task[0], status=task[1])
         elif task[0] in ["boot", "stopTransaction"] :
             # 부팅, 종료(정지) 이유 등록
@@ -367,7 +388,7 @@ def case_run(case):
                     time.sleep(local_var["heartbeatInterval"])
         else:
             charger.make_request(command=task[0])
-        evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*25)
+        evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
         evlogger.info(local_var)
         evlogger.info("="*60)
         time.sleep(1)
@@ -375,6 +396,6 @@ def case_run(case):
 # case_run(scenario.error_after_charging)
 case_run(scenario.normal_case)
 # case_run(scenario.error_in_charge)
-# case_run(scenario.error_after_boot)
+# case_run(scenario.error_just_after_boot)
 # case_run(scenario.heartbeat_after_boot)
 # case_run(scenario.no_charge_after_authorize)

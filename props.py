@@ -44,7 +44,7 @@ api_headers={
 }
 
 api_params = {"authorize":{
-            "idTag":"1010202030304040",
+            "idTag":"1111222233335555",
         }, "statusNotification": {
             "connectorId": "01",
             "errorCode": "NoError",
@@ -103,7 +103,7 @@ api_params = {"authorize":{
             }]
             
         }, "stopTransaction":{
-            "idTag":"1234567890123456",
+            "idTag":"1111222233335555",
             "meterStop":"0",
             "reason":"Finished",
             "timestamp":"",
@@ -124,7 +124,7 @@ api_params = {"authorize":{
             }]
             }]
         }, "startTransaction":{
-            "idTag":"1234567890123456",
+            "idTag":"1111222233335555",
             "connectorId":"01",
             "meterStart":"222222",
             "timestamp":"",
@@ -137,14 +137,14 @@ api_params = {"authorize":{
             "lccid":"usim121331",
             "imsi":"01023224444",
             "meterSerialNumber":"CNTER23123123",
-            "rssi":"23124124",
+            "rssi":"-80",
             "entityId":"M2M2442"
         }, "dataTransferTariff":{
             "venderId":"LG",
             "messageId":"Tariff",
             "data":{
                 "connectorId":"01",
-                "idTag":"",
+                "idTag":"1111222233335555",
                 "timestamp":""
             }
         }, "dataTransferHeartbeat":{
@@ -152,8 +152,8 @@ api_params = {"authorize":{
             "messageId":"heartbeat",
             "data":{
                 "rssi":80,
-                "snr":1,
-                "rsrp":1,
+                "snr":57,
+                "rsrp":70,
             }
         }
 }
@@ -177,14 +177,14 @@ api_response = {
         },
     },
     "startTransaction":{
-        "idtaginfo":{
+        "idTagInfo":{
             "expiryDate":["O", None],
             "parentIdTag":["O",None],
             "status":["M", None]
         },
         "transactionId":["M", "transactionId"]
     }, "stopTransaction":{
-        "idtaginfo":{
+        "idTagInfo":{
             "expiryDate":["O", None],
             "parentIdTag":["O", None],
             "status":["M", None]

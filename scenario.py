@@ -26,7 +26,7 @@ Todo:
 ## 일반 충전/종료 케이스
 normal_case = [
     ["boot", "PowerUp"],
-    ["prepare"],
+    ["statusNotification", "Available"],
     ["authorize"],
     ["statusNotification", "Preparing"],
     ["dataTransferTariff"],
@@ -54,9 +54,10 @@ error_in_charge = [
 ]
 
 # 부팅 후 heartbeat 진행 중 리부팅 됨(리부팅 후 부팅 안됨)
-error_after_boot = [
+error_just_after_boot = [
     ["boot", "PowerUp"],
-    ["statusNotification", "Unavailable", "InternalError"],
+    ["statusNotification", "Unavailable", "InternalError", "HighTemperature"],
+    # ["statusNotification", "Available"],
 ]
 
 # 부팅 후 대기 중
