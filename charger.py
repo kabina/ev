@@ -22,6 +22,9 @@ import scenario
 import time
 from evlogger import Logger
 
+logger = Logger()
+evlogger = logger.initLogger()
+
 local_var = {
     "transactionId":None,
     "heartbeatInterval":5,
@@ -50,8 +53,6 @@ sampled_value = {
     "paimport" :0,  # Power.Active.Import 충전기로 지속 충전되는 양 (W)
 }
 
-logger = Logger()
-evlogger = logger.initLogger()
 
 setter = {
     "timestamp": lambda x: datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z") + "Z",
@@ -70,9 +71,11 @@ setter = {
 def init_local_var():
     fixed = [
         "vendorId",
+        "X-EVC-BOX",
         "X-EVC-MDL",
         "X-EVC-OS",
-        "heartbeatInterval"
+        "heartbeatInterval",
+        "connectorId",
     ]
     for item in local_var:
         if item not in fixed :
@@ -285,6 +288,7 @@ class Charger(Server):
         header=props.api_headers[command]
         parameter=props.api_params[command]
         response=None
+
         def set_header(header, headers):
             if command == "boot":
                 ri = "boot"
@@ -372,7 +376,7 @@ def case_run(case):
             charger.make_request(command=task[0])
         elif task[0]== "meterValue":
             for i in range(1, random.randrange(5,10)):
-                charger.make_request(command="meterValues")
+                charger.make_request(command=task[0])
                 time.sleep(1)
         elif task[0] == "dataTransferHeartbeat":
             # heartbeat은 10번만 보냄
@@ -399,3 +403,4 @@ case_run(scenario.normal_case)
 # case_run(scenario.error_just_after_boot)
 # case_run(scenario.heartbeat_after_boot)
 # case_run(scenario.no_charge_after_authorize)
+# case_run(scenario.reserved_after_boot)

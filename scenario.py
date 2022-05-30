@@ -32,7 +32,7 @@ normal_case = [
     ["dataTransferTariff"],
     ["startTransaction"],
     ["statusNotification", "Charging"],
-    ["meterValue"],
+    ["meterValues"],
     ["stopTransaction", "Finished"],
     ["statusNotification", "Finishing"],
     ["statusNotification", "Available"],
@@ -48,7 +48,7 @@ error_in_charge = [
     ["dataTransferTariff"],
     ["startTransaction"],
     ["statusNotification", "Charging"],
-    ["meterValue"],
+    ["meterValues"],
     ["stopTransaction", "EmergencyStop"],
     ["boot"]
 ]
@@ -83,4 +83,11 @@ error_after_charging = [
     ["statusNotification", "Preparing"],
     ["dataTransferTariff"],
     ["startTransaction"],
+]
+
+# 부팅 후 충전기 예약 대기중으로 변경 >> 예약충전기로 진행 해야 함
+reserved_after_boot = [
+    ["boot", "PowerUp"],
+    ["statusNotification", "Reserved"],
+    ["dataTransferHeartbeat", None]
 ]
