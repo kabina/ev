@@ -25,6 +25,8 @@ from evlogger import Logger
 logger = Logger()
 evlogger = logger.initLogger()
 
+stop_by_error = False # CS로 부터 Response 정보가 부족하더라도 시뮬레이트 계속 작동
+
 local_var = {
     "transactionId":None,
     "heartbeatInterval":5,
@@ -35,6 +37,7 @@ local_var = {
     "boot_reason":None,
     "stopTransaction_reason":None,
     "statusNotification_reason":None,
+    "meterStart":None,
     "meterStop":None,
     "idTag":None,
     "X-EVC-MDL": "LGE-123",
@@ -44,11 +47,18 @@ local_var = {
     "responseFailure": False,
 }
 
+idTags = [
+    "5555222233334444",
+    "3333222233334444",
+    "1111222233336666",
+    "1010202030306060"
+]
+
 # meterValue용 파라메터 변수 들 (기본값)
 sampled_value = {
     "cimport":12,  # Current.Import, 충전전류(A)
     "voltage": 220.0,  # Voltage
-    "eairegister": 30000,  # Energy.Active.Import.Register (Wh)
+    "eairegister": 0,  # Energy.Active.Import.Register (Wh)
     "soc" : 10,  # SoC
     "paimport" :0,  # Power.Active.Import 충전기로 지속 충전되는 양 (W)
 }
@@ -60,9 +70,11 @@ setter = {
     "vendorId": lambda x: local_var[x],
     "connectorId": lambda x: local_var[x],
     "status": lambda x: local_var[x],
+    "meterStart": lambda x: local_var[x],
     "meterStop": lambda x: local_var[x],
     "errorCode": lambda x: local_var[x],
     "boot_reason": lambda x: local_var[x],
+    "idTag": lambda x: idTags[random.randrange(0,len(idTags))],
     "stopTransaction_reason": lambda x: local_var[x],
     "statusNotification_reason": lambda x: local_var[x],
 }
@@ -127,10 +139,11 @@ class Charger(Server):
     def meter_update(self, command=None):
         sampled_value["cimport"] += sampled_value["cimport"] + random.uniform(-1,1)
         sampled_value["voltage"] = sampled_value["voltage"] + random.uniform(-1,1)
-        # sampled_value["eairegister"] = sampled_value["eairegister"] + random.uniform(-1,1)
-        sampled_value["soc"] = sampled_value["soc"]
-        sampled_value["paimport"] = (sampled_value["paimport"]+1000 +
+        sampled_value["eairegister"] = (sampled_value["eairegister"]+1000 +
                                     random.uniform(-1,1) ) if command == "meterValues" else 0
+        sampled_value["soc"] = sampled_value["soc"]
+        sampled_value["paimport"] += sampled_value["paimport"] + random.uniform(-1,1)
+
         update_var("meterStop",sampled_value["paimport"])
 
     def get_sampledValue(self):
@@ -232,7 +245,10 @@ class Charger(Server):
                 if to_item[0] in diff_from_items:
                     self.check_response(diff_from_items[to_item[0]], to_item[1])
                 else:
-                    evlogger.error("No Response Item '{}'".format(to_item[0]))
+                    msg = "No Response Item '{}'".format(to_item[0])
+                    evlogger.error(msg)
+                    if stop_by_error :
+                        raise Exception(msg)
             # 데이터타입이 List인 경우 (반드시 Element는 1개 이상의 Dict임)
             elif type(to_item[1]) is list and type(to_item[1][0]) is dict:
                 # tariff와 같이 하위 List Element내에 dict가 반복되는 데이터셋 처리
@@ -253,7 +269,7 @@ class Charger(Server):
                 else:
                     evlogger.warning("No Response Item '{}'(Optional)".format(to_item[0]))
 
-    def post_process(self, response, command):
+    def resp_post_process(self, response, command):
         """충전기는 CS(Central System)로 부터 받은 응답을 후처리 함
 
         Args:
@@ -261,14 +277,30 @@ class Charger(Server):
           command : 충전기에서 서버로 보낸 명령(authorize, boot, startTransactionRequest ... )
 
         Returns:
-          None.
+          errorCode: -1 : No error
+                      > 1 : Error
+          errorMsg: error message.
 
         Raises:
           None.cmd
         """
+        errorCode = -1
+        errorMsg = None
+
         # 사용자 요금정보(Tariff) 처리
+
         if command == "dataTransferTariff" :
             local_var["tariff"] = response["data"]["tariff"]
+        if command == "startTransaction" :
+            if response["transactionId"] is None or len(response["transactionId"]) == 0 :
+                evlogger.error("No Transaction ID")
+                errorMsg = "No Transaction ID"
+                errorCode = 1
+            else :
+                local_var["transactionId"] = response["transactionId"]
+
+        if errorCode > 0 :
+            raise Exception(errorMsg)
 
     def make_request(self, command=None, status=None):
         """충전기에서 CS(Central System)으로 보낼 데이터를 생성 하고 송신 후 Response를 수신 함
@@ -297,7 +329,6 @@ class Charger(Server):
             else:
                 ri = "card"
             get_headers = {
-
                         'X-EVC-RI': datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]+"_"+ri,
                         'X-EVC-MDL': local_var["X-EVC-MDL"],
                         'X-EVC-BOX': local_var["X-EVC-BOX"],
@@ -310,6 +341,7 @@ class Charger(Server):
 
         # 기본 템플릿 기반으로 파라미터 설정
         parameter = self.touch_parameter(parameter, command=command)
+
         if status is not None:
             parameter["status"] = status
 
@@ -339,10 +371,8 @@ class Charger(Server):
 
         # 정상 Response를 받은 경우 아래 수행
         if not local_var["responseFailure"]:
-            self.post_process(response, command)
+            self.resp_post_process(response, command)
 
-        if status is not None :
-            local_var["status"] = status
 
 def case_run(case):
     """충전기 기본 시뮬레이트 실행. 시험 케이스에 따라 충전기 동작 수행
@@ -362,40 +392,46 @@ def case_run(case):
     # 케이스 별로 사전 상태변수 및 오류코드 세팅 후 Request 요청
 
     charger = Charger("01040001", "010400011001", "01")
-    init_local_var()
+    # charger = Charger("010400001", "010400001100A", "01")
 
-    for task in case:
-        if task[0] == "statusNotification" :
-            if len(task) > 2: # 2nd element(arg)가 있는 경우만
-                update_var("errorCode", task[2])
-                update_var("statusNotification_reason", task[3])
-            charger.make_request(command=task[0], status=task[1])
-        elif task[0] in ["boot", "stopTransaction"] :
-            # 부팅, 종료(정지) 이유 등록
-            update_var(task[0]+"_reason", task[1])
-            charger.make_request(command=task[0])
-        elif task[0]== "meterValue":
-            for i in range(1, random.randrange(5,10)):
-                charger.make_request(command=task[0])
+    retval = None
+    try :
+        while True:
+            init_local_var()
+            for task in case:
+                if task[0] == "statusNotification" :
+                    if len(task) > 2: # 2nd element(arg)가 있는 경우만
+                        update_var("errorCode", task[2])
+                        update_var("statusNotification_reason", task[3])
+                    charger.make_request(command=task[0], status=task[1])
+                elif task[0] in ["boot", "stopTransaction"] :
+                    # 부팅, 종료(정지) 이유 등록
+                    update_var(task[0]+"_reason", task[1])
+                    charger.make_request(command=task[0])
+                elif task[0]== "meterValue":
+                    for i in range(1, random.randrange(5,10)):
+                        charger.make_request(command=task[0])
+                        time.sleep(1)
+                elif task[0] == "dataTransferHeartbeat":
+                    # heartbeat은 10번만 보냄
+                    if task[1] is None:
+                        for i in range(1, random.randrange(5,10)):
+                            charger.make_request(command=task[0])
+                            # heartbeatInterval에 따라 주기적으로 전송
+                            time.sleep(local_var["heartbeatInterval"])
+                    elif task[1] == -1:
+                        while True:
+                            charger.make_request(command=task[0])
+                            # heartbeatInterval에 따라 주기적으로 전송
+                            time.sleep(local_var["heartbeatInterval"])
+                else:
+                    charger.make_request(command=task[0])
+                evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
+                evlogger.info(local_var)
+                evlogger.info("="*60)
                 time.sleep(1)
-        elif task[0] == "dataTransferHeartbeat":
-            # heartbeat은 10번만 보냄
-            if task[1] is None:
-                for i in range(1, random.randrange(5,10)):
-                    charger.make_request(command=task[0])
-                    # heartbeatInterval에 따라 주기적으로 전송
-                    time.sleep(local_var["heartbeatInterval"])
-            elif task[1] == -1:
-                while True:
-                    charger.make_request(command=task[0])
-                    # heartbeatInterval에 따라 주기적으로 전송
-                    time.sleep(local_var["heartbeatInterval"])
-        else:
-            charger.make_request(command=task[0])
-        evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
-        evlogger.info(local_var)
-        evlogger.info("="*60)
-        time.sleep(1)
+    except Exception as e:
+        evlogger.error(e)
 
 # case_run(scenario.error_after_charging)
 case_run(scenario.normal_case)

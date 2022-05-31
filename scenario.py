@@ -91,3 +91,11 @@ reserved_after_boot = [
     ["statusNotification", "Reserved"],
     ["dataTransferHeartbeat", None]
 ]
+
+
+remote_stop_transaction = [
+    ["stopTransaction", "Remote"],
+    ["statusNotification", "Finishing"],
+    ["statusNotification", "Available"],
+    ["dataTransferHeartbeat"]
+]
