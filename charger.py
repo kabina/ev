@@ -25,83 +25,14 @@ from evlogger import Logger
 logger = Logger()
 evlogger = logger.initLogger()
 
-stop_by_error = False # CS로 부터 Response 정보가 부족하더라도 시뮬레이트 계속 작동
-
-local_var = {
-    "transactionId":None,
-    "heartbeatInterval":5,
-    "vendorId":"LGE",
-    "connectorId":None,
-    "status":"Available",
-    "errorCode":"NoError",
-    "boot_reason":None,
-    "stopTransaction_reason":None,
-    "statusNotification_reason":None,
-    "meterStart":None,
-    "meterStop":None,
-    "idTag":None,
-    "X-EVC-MDL": "LGE-123",
-    "X-EVC-BOX": None,
-    "X-EVC-OS": "Linux 5.5",
-    "tariff" : [],
-    "responseFailure": False,
-}
-
+"""랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
+"""
 idTags = [
     "5555222233334444",
     "3333222233334444",
     "1111222233336666",
     "1010202030306060"
 ]
-
-# meterValue용 파라메터 변수 들 (기본값)
-sampled_value = {
-    "cimport":12,  # Current.Import, 충전전류(A)
-    "voltage": 220.0,  # Voltage
-    "eairegister": 0,  # Energy.Active.Import.Register (Wh)
-    "soc" : 10,  # SoC
-    "paimport" :0,  # Power.Active.Import 충전기로 지속 충전되는 양 (W)
-}
-
-
-setter = {
-    "timestamp": lambda x: datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z") + "Z",
-    "transactionId": lambda x: local_var[x],
-    "vendorId": lambda x: local_var[x],
-    "connectorId": lambda x: local_var[x],
-    "status": lambda x: local_var[x],
-    "meterStart": lambda x: local_var[x],
-    "meterStop": lambda x: local_var[x],
-    "errorCode": lambda x: local_var[x],
-    "boot_reason": lambda x: local_var[x],
-    "idTag": lambda x: idTags[random.randrange(0,len(idTags))],
-    "stopTransaction_reason": lambda x: local_var[x],
-    "statusNotification_reason": lambda x: local_var[x],
-}
-
-
-def init_local_var():
-    fixed = [
-        "vendorId",
-        "X-EVC-BOX",
-        "X-EVC-MDL",
-        "X-EVC-OS",
-        "heartbeatInterval",
-        "connectorId",
-    ]
-    for item in local_var:
-        if item not in fixed :
-            local_var[item] = None
-
-
-def disp_header(command):
-    print("#"*50)
-    print("############# - Request for {}".format(command))
-    print("#"*50)
-
-
-def update_var(item, value):
-    local_var[item] = value
 
 
 class Server(metaclass=ABCMeta):
@@ -120,13 +51,88 @@ class Charger(Server):
         Server (Class): 서버 클래스의 abstract class inherit
 
     """
-    def __init__(self, station_id, charger_id, connector_id):
-        local_var["X-EVC-BOX"] = station_id+charger_id
-        local_var["connectorId"] = connector_id
 
-    def update_var(self, *args, **kwargs):
-        for item in kwargs:
-            local_var[item[0]] = item[1]
+    def __init__(self, charger_id=None):
+
+        if charger_id is None or len(charger_id) !=14 :
+            logger.error("충전기ID 오류로 충전기를 생성 할 수 없습니다.")
+            return
+
+        self.stop_by_error = False  # CS로 부터 Response 정보가 부족하더라도 시뮬레이트 계속 작동
+        self.local_var = {
+            "transactionId": None,
+            "heartbeatInterval": 5,
+            "vendorId": "LGE",
+            "connectorId": None,
+            "status": "Available",
+            "errorCode": "NoError",
+            "boot_reason": None,
+            "stopTransaction_reason": None,
+            "statusNotification_reason": None,
+            "meterStart": None,
+            "meterStop": None,
+            "idTag": None,
+            "X-EVC-MDL": "LGE-123",
+            "X-EVC-BOX": None,
+            "X-EVC-OS": "Linux 5.5",
+            "tariff": [],
+            "responseFailure": False,
+        }
+
+        # meterValue용 파라메터 변수 들 (기본값)
+
+        self.sampled_value = {
+            "cimport": 12,  # Current.Import, 충전전류(A)
+            "voltage": 220.0,  # Voltage
+            "eairegister": 0,  # Energy.Active.Import.Register (Wh)
+            "soc": 10,  # SoC
+            "paimport": 0,  # Power.Active.Import 충전기로 지속 충전되는 양 (W)
+        }
+
+        self.local_var["X-EVC-BOX"] = charger_id[:12]
+        self.local_var["connectorId"] = charger_id[12:]
+
+        self.setter = {
+            "timestamp": lambda x: datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z") + "Z",
+            "transactionId": lambda x: self.local_var[x],
+            "vendorId": lambda x: self.local_var[x],
+            "connectorId": lambda x: self.local_var[x],
+            "status": lambda x: self.local_var[x],
+            "meterStart": lambda x: self.local_var[x],
+            "meterStop": lambda x: self.local_var[x],
+            "errorCode": lambda x: self.local_var[x],
+            "boot_reason": lambda x: self.local_var[x],
+            "idTag": lambda x: idTags[random.randrange(0, len(idTags))],
+            "stopTransaction_reason": lambda x: self.local_var[x],
+            "statusNotification_reason": lambda x: self.local_var[x],
+        }
+
+
+    def init_local_var(self,):
+        fixed = [
+            "vendorId",
+            "X-EVC-BOX",
+            "X-EVC-MDL",
+            "X-EVC-OS",
+            "heartbeatInterval",
+            "connectorId",
+        ]
+        for item in self.local_var:
+            if item not in fixed:
+                self.local_var[item] = None
+
+    def disp_header(self, command):
+        evlogger.info("#" * 50)
+        evlogger.info("############# - Request for {}".format(command))
+        evlogger.info("#" * 50)
+
+    def update_var(self, item, value):
+        self.local_var[item] = value
+
+
+    # def update_var(self, *args, **kwargs):
+    #     for item in kwargs:
+    #         self.local_var[item[0]] = item[1]
 
     def login(self, userid, password):
 
@@ -137,28 +143,28 @@ class Charger(Server):
         self.accessToken = response_dict["payload"]["accessToken"]
 
     def meter_update(self, command=None):
-        sampled_value["cimport"] += sampled_value["cimport"] + random.uniform(-1,1)
-        sampled_value["voltage"] = sampled_value["voltage"] + random.uniform(-1,1)
-        sampled_value["eairegister"] = (sampled_value["eairegister"]+1000 +
+        self.sampled_value["cimport"] += self.sampled_value["cimport"] + random.uniform(-1,1)
+        self.sampled_value["voltage"] = self.sampled_value["voltage"] + random.uniform(-1,1)
+        self.sampled_value["eairegister"] = (self.sampled_value["eairegister"]+1000 +
                                     random.uniform(-1,1) ) if command == "meterValues" else 0
-        sampled_value["soc"] = sampled_value["soc"]
-        sampled_value["paimport"] += sampled_value["paimport"] + random.uniform(-1,1)
+        self.sampled_value["soc"] = self.sampled_value["soc"]
+        self.sampled_value["paimport"] += self.sampled_value["paimport"] + random.uniform(-1,1)
 
-        update_var("meterStop",sampled_value["paimport"])
+        self.update_var("meterStop",self.sampled_value["paimport"])
 
     def get_sampledValue(self):
         self.meter_update(command="meterValues")
         value = [
             {   "measurand": "Current.Import", "phase": "L1", "unit": "A", "value":
-                "{:.1f}".format(sampled_value["cimport"]),  # Wh Value
+                "{:.1f}".format(self.sampled_value["cimport"]),  # Wh Value
             }, {"measurand": "Voltage", "phase": "L1", "unit": "V", "value":
-                "{:.1f}".format(sampled_value["voltage"]),
+                "{:.1f}".format(self.sampled_value["voltage"]),
             }, {"measurand": "Energy.Active.Import.Register", "unit": "Wh", "value":
-                "{:.1f}".format(sampled_value["eairegister"])
+                "{:.1f}".format(self.sampled_value["eairegister"])
             }, {"measurand": "SoC", "unit": "%", "value":
-                "{}".format(sampled_value["soc"],)
+                "{}".format(self.sampled_value["soc"],)
             }, {"measurand": "Power.Active.Import", "unit": "W", "value":
-                "{:.1f}".format(sampled_value["paimport"])
+                "{:.1f}".format(self.sampled_value["paimport"])
             }
         ]
         return value
@@ -186,8 +192,8 @@ class Charger(Server):
                 newParam.append(self.touch_parameter(item, command=command))
             elif type(item) is list:
                 newParam.append(self.ltouch_parameter(item, command=command))
-            elif item in setter:
-                newParam.append(setter[item](item))
+            elif item in self.setter:
+                newParam.append(self.setter[item](item))
             else:
                 newParam.append(item)
         return newParam
@@ -216,9 +222,9 @@ class Charger(Server):
                 else:
                     newParam[item[0]] = self.ltouch_parameter(item[1], command=command)
             elif item[0] == "reason" and command in ["boot", "stopTransaction", "statusNotification"]:
-                newParam[item[0]] = setter[command+"_"+item[0]](command+"_"+item[0])
-            elif item[0] in setter :
-                newParam[item[0]] = setter[item[0]](item[0])
+                newParam[item[0]] = self.setter[command+"_"+item[0]](command+"_"+item[0])
+            elif item[0] in self.setter :
+                newParam[item[0]] = self.setter[item[0]](item[0])
             else:
                 newParam[item[0]]=item[1]
         return newParam
@@ -247,7 +253,7 @@ class Charger(Server):
                 else:
                     msg = "No Response Item '{}'".format(to_item[0])
                     evlogger.error(msg)
-                    if stop_by_error :
+                    if self.stop_by_error :
                         raise Exception(msg)
             # 데이터타입이 List인 경우 (반드시 Element는 1개 이상의 Dict임)
             elif type(to_item[1]) is list and type(to_item[1][0]) is dict:
@@ -261,11 +267,11 @@ class Charger(Server):
                  # evlogger.info("CS Not ready for list in response")
             elif to_item[0] in diff_from_items:
                 if to_item[1][1] :
-                    update_var(to_item[1][1], diff_from_items[to_item[0]])
+                    self.update_var(to_item[1][1], diff_from_items[to_item[0]])
             else:
                 if(to_item[1][0]=="M"):
                     evlogger.error("No Response Item '{}'".format(to_item[0]))
-                    update_var("responseFailure", True)
+                    self.update_var("responseFailure", True)
                 else:
                     evlogger.warning("No Response Item '{}'(Optional)".format(to_item[0]))
 
@@ -290,14 +296,14 @@ class Charger(Server):
         # 사용자 요금정보(Tariff) 처리
 
         if command == "dataTransferTariff" :
-            local_var["tariff"] = response["data"]["tariff"]
+            self.local_var["tariff"] = response["data"]["tariff"]
         if command == "startTransaction" :
             if response["transactionId"] is None or len(response["transactionId"]) == 0 :
                 evlogger.error("No Transaction ID")
                 errorMsg = "No Transaction ID"
                 errorCode = 1
             else :
-                local_var["transactionId"] = response["transactionId"]
+                self.local_var["transactionId"] = response["transactionId"]
 
         if errorCode > 0 :
             raise Exception(errorMsg)
@@ -330,10 +336,10 @@ class Charger(Server):
                 ri = "card"
             get_headers = {
                         'X-EVC-RI': datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]+"_"+ri,
-                        'X-EVC-MDL': local_var["X-EVC-MDL"],
-                        'X-EVC-BOX': local_var["X-EVC-BOX"],
-                        'X-EVC-OS': local_var["X-EVC-OS"],
-                        'X-EVC-CON': local_var["connectorId"],
+                        'X-EVC-MDL': self.local_var["X-EVC-MDL"],
+                        'X-EVC-BOX': self.local_var["X-EVC-BOX"],
+                        'X-EVC-OS': self.local_var["X-EVC-OS"],
+                        'X-EVC-CON': self.local_var["connectorId"],
                         }
             for h in headers :
                 header[h] = get_headers[h]
@@ -345,7 +351,7 @@ class Charger(Server):
         if status is not None:
             parameter["status"] = status
 
-        disp_header(command)
+        self.disp_header(command)
         header = props.headers
         # header["Authorization"] = "Bearer {}".format(self.accessToken)
         if command in ["boot", "authorize", "dataTransferHeartbeat"]:
@@ -370,7 +376,7 @@ class Charger(Server):
             self.check_response(response, props.api_response[command])
 
         # 정상 Response를 받은 경우 아래 수행
-        if not local_var["responseFailure"]:
+        if not self.local_var["responseFailure"]:
             self.resp_post_process(response, command)
 
 
@@ -391,52 +397,51 @@ def case_run(case):
     # param 3: Connector
     # 케이스 별로 사전 상태변수 및 오류코드 세팅 후 Request 요청
 
-    charger = Charger("01040001", "010400011001", "01")
+    charger = Charger(charger_id = "01040001000101")
     # charger = Charger("010400001", "010400001100A", "01")
 
     retval = None
-    try :
-        while True:
-            init_local_var()
-            for task in case:
-                if task[0] == "statusNotification" :
-                    if len(task) > 2: # 2nd element(arg)가 있는 경우만
-                        update_var("errorCode", task[2])
-                        update_var("statusNotification_reason", task[3])
-                    charger.make_request(command=task[0], status=task[1])
-                elif task[0] in ["boot", "stopTransaction"] :
-                    # 부팅, 종료(정지) 이유 등록
-                    update_var(task[0]+"_reason", task[1])
+
+    while True:
+        charger.init_local_var()
+        for task in case:
+            if task[0] == "statusNotification" :
+                if len(task) > 2: # 2nd element(arg)가 있는 경우만
+                    charger.update_var("errorCode", task[2])
+                    charger.update_var("statusNotification_reason", task[3])
+                charger.make_request(command=task[0], status=task[1])
+            elif task[0] in ["boot", "stopTransaction"] :
+                # 부팅, 종료(정지) 이유 등록
+                charger.update_var(task[0]+"_reason", task[1])
+                charger.make_request(command=task[0])
+            elif task[0]== "meterValue":
+                for i in range(1, random.randrange(5,10)):
                     charger.make_request(command=task[0])
-                elif task[0]== "meterValue":
+                    time.sleep(1)
+            elif task[0] == "dataTransferHeartbeat":
+                # heartbeat은 10번만 보냄
+                if len(task) == 1 or task[1] is None:
                     for i in range(1, random.randrange(5,10)):
                         charger.make_request(command=task[0])
-                        time.sleep(1)
-                elif task[0] == "dataTransferHeartbeat":
-                    # heartbeat은 10번만 보냄
-                    if task[1] is None:
-                        for i in range(1, random.randrange(5,10)):
-                            charger.make_request(command=task[0])
-                            # heartbeatInterval에 따라 주기적으로 전송
-                            time.sleep(local_var["heartbeatInterval"])
-                    elif task[1] == -1:
-                        while True:
-                            charger.make_request(command=task[0])
-                            # heartbeatInterval에 따라 주기적으로 전송
-                            time.sleep(local_var["heartbeatInterval"])
-                else:
-                    charger.make_request(command=task[0])
-                evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
-                evlogger.info(local_var)
-                evlogger.info("="*60)
-                time.sleep(1)
-    except Exception as e:
-        evlogger.error(e)
+                        # heartbeatInterval에 따라 주기적으로 전송
+                        time.sleep(charger.local_var["heartbeatInterval"])
+                elif task[1] == -1:
+                    while True:
+                        charger.make_request(command=task[0])
+                        # heartbeatInterval에 따라 주기적으로 전송
+                        time.sleep(charger.local_var["heartbeatInterval"])
+            else:
+                charger.make_request(command=task[0])
+            evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
+            evlogger.info(charger.local_var)
+            evlogger.info("="*60)
+            time.sleep(1)
 
-# case_run(scenario.error_after_charging)
 case_run(scenario.normal_case)
+# case_run(scenario.error_after_charging)
 # case_run(scenario.error_in_charge)
 # case_run(scenario.error_just_after_boot)
 # case_run(scenario.heartbeat_after_boot)
 # case_run(scenario.no_charge_after_authorize)
 # case_run(scenario.reserved_after_boot)
+# case_run(scenario.remote_stop_transaction)
