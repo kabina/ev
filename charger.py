@@ -322,10 +322,9 @@ class Charger(Server):
         Raises:
           None.
         """
+
         url = props.urls[command]
-        header=props.api_headers[command]
         parameter=props.api_params[command]
-        response=None
 
         def set_header(header, headers):
             if command == "boot":
