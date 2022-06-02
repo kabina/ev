@@ -382,6 +382,7 @@ class Charger(Server):
         if not self.local_var["responseFailure"]:
             self.resp_post_process(response, command)
 
+        return parameter, response
 
 def case_run(case):
     """충전기 기본 시뮬레이트 실행. 시험 케이스에 따라 충전기 동작 수행
@@ -403,40 +404,57 @@ def case_run(case):
     charger = Charger(charger_id = "01040001100101")
     # charger = Charger("010400001", "010400001100A", "01")
 
-    while True:
-        charger.init_local_var()
-        for task in case:
-            if task[0] == "statusNotification" :
-                if len(task) > 2: # 2nd element(arg)가 있는 경우만
-                    charger.update_var("errorCode", task[2])
-                    charger.update_var("statusNotification_reason", task[3])
-                charger.make_request(command=task[0], status=task[1])
-            elif task[0] in ["boot", "stopTransaction"] :
-                # 부팅, 종료(정지) 이유 등록
-                charger.update_var(task[0]+"_reason", task[1])
-                charger.make_request(command=task[0])
-            elif task[0]== "meterValue":
+    xlsx_body = []
+
+    print(xlsx_body)
+
+    from openpyxl import Workbook
+
+    wb = Workbook()  # create xlsx file
+    ws = wb.active
+    ws.append(["command", "request", "response", "variables"])
+    charger.init_local_var()
+    for task in case:
+        rows = []
+        rows.append(task[0])
+        if task[0] == "statusNotification" :
+            if len(task) > 2: # 2nd element(arg)가 있는 경우만
+                charger.update_var("errorCode", task[2])
+                charger.update_var("statusNotification_reason", task[3])
+            rows.append(charger.make_request(command=task[0], status=task[1]))
+        elif task[0] in ["boot", "stopTransaction"] :
+            # 부팅, 종료(정지) 이유 등록
+            charger.update_var(task[0]+"_reason", task[1])
+            rows.append(charger.make_request(command=task[0]))
+        elif task[0]== "meterValue":
+            for i in range(1, random.randrange(5,10)):
+                rows.append(charger.make_request(command=task[0]))
+                time.sleep(1)
+        elif task[0] == "dataTransferHeartbeat":
+            # heartbeat은 10번만 보냄
+            if len(task) == 1 or task[1] is None:
                 for i in range(1, random.randrange(5,10)):
-                    charger.make_request(command=task[0])
+                    rows.append(charger.make_request(command=task[0]))
+                    # heartbeatInterval에 따라 주기적으로 전송
+                    #time.sleep(charger.local_var["heartbeatInterval"])
                     time.sleep(1)
-            elif task[0] == "dataTransferHeartbeat":
-                # heartbeat은 10번만 보냄
-                if len(task) == 1 or task[1] is None:
-                    for i in range(1, random.randrange(5,10)):
-                        charger.make_request(command=task[0])
-                        # heartbeatInterval에 따라 주기적으로 전송
-                        time.sleep(charger.local_var["heartbeatInterval"])
-                elif task[1] == -1:
-                    while True:
-                        charger.make_request(command=task[0])
-                        # heartbeatInterval에 따라 주기적으로 전송
-                        time.sleep(charger.local_var["heartbeatInterval"])
-            else:
-                charger.make_request(command=task[0])
-            evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
-            evlogger.info(charger.local_var)
-            evlogger.info("="*60)
-            time.sleep(1)
+
+            elif task[1] == -1:
+                while True:
+                    rows.append(charger.make_request(command=task[0]))
+                    # heartbeatInterval에 따라 주기적으로 전송
+                    time.sleep(1)
+                    #time.sleep(charger.local_var["heartbeatInterval"])
+
+        else:
+            rows.append(charger.make_request(command=task[0]))
+        evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
+        evlogger.info(charger.local_var)
+        evlogger.info("="*60)
+        time.sleep(1)
+        #rows.append(charger.local_var.values())
+        ws.append([str(rows)])
+        wb.save("./output.xlsx")
 
 import urllib3
 # exclude SSL Warning message
