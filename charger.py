@@ -440,6 +440,10 @@ def case_run(case):
             evlogger.info("="*60)
             time.sleep(1)
 
+import urllib3
+# exclude SSL Warning message
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 case_run(scenario.normal_case)
 # case_run(scenario.error_after_charging)
 # case_run(scenario.error_in_charge)

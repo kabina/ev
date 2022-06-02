@@ -1,5 +1,3 @@
-from datetime import datetime
-
 host = "https://deveasyvolt.uplus.co.kr"
 chost = "https://devevspcharger.uplus.co.kr"
 # host = "http://localhost:5000"
