@@ -363,7 +363,11 @@ class Charger(Server):
         evlogger.info(">"*10+"송신 BODY"+">"*10)
         evlogger.info(data)
 
-        response = requests.post(url, headers=header, data=data)
+        response = requests.post(url, headers=header, data=data, verify=False)
+        if response.status_code in [503,404, 403]:
+            evlogger.error("No Available Service. [{}]".format(response.status_code))
+            return response.status_code
+
         response = response.json()
 
         evlogger.info("<"*10+"수신 DATA"+"<"*10)

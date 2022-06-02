@@ -1,21 +1,21 @@
 from datetime import datetime
 
-host = "http://deveasyvolt.uplus.co.kr"
-chost = "http://devevspcharger.uplus.co.kr"
+host = "https://deveasyvolt.uplus.co.kr"
+chost = "https://devevspcharger.uplus.co.kr"
 # host = "http://localhost:5000"
 # chost = "http://localhost:5000"
 
 urls = {
     "login": host+"/adm/cmm-api/v1/AUTH/login",
-    "authorize":chost+"/cs/api/v1/OCPP/authorize/999332",
-    "boot":chost+"/cs/api/v1/OCPP/bootNotification/999332",
-    "dataTransferHeartbeat":chost+"/cs/api/v1/OCPP/dataTransfer/999332",
-    "prepare":chost+"/cs/api/v1/OCPP/statusNotification/999332",
-    "dataTransferTariff":chost+"/cs/api/v1/OCPP/dataTransferTariff/999332",
-    "startTransaction":chost+"/cs/api/v1/OCPP/startTransaction/999332",
-    "stopTransaction":chost+"/cs/api/v1/OCPP/stopTransaction/999332",
-    "meterValues":chost+"/cs/api/v1/OCPP/meterValues/999332",
-    "statusNotification": chost + "/cs/api/v1/OCPP/statusNotification/999332",
+    "authorize":chost+"/api/v1/OCPP/authorize/999332",
+    "boot":chost+"/api/v1/OCPP/bootNotification/999332",
+    "dataTransferHeartbeat":chost+"/api/v1/OCPP/dataTransfer/999332",
+    "prepare":chost+"/api/v1/OCPP/statusNotification/999332",
+    "dataTransferTariff":chost+"/api/v1/OCPP/dataTransferTariff/999332",
+    "startTransaction":chost+"/api/v1/OCPP/startTransaction/999332",
+    "stopTransaction":chost+"/api/v1/OCPP/stopTransaction/999332",
+    "meterValues":chost+"/api/v1/OCPP/meterValues/999332",
+    "statusNotification": chost + "/api/v1/OCPP/statusNotification/999332",
 }
 headers={
         'Content-type':'application/json', 
