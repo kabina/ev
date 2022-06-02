@@ -364,8 +364,8 @@ class Charger(Server):
         evlogger.info(data)
 
         response = requests.post(url, headers=header, data=data, verify=False)
-        if response.status_code in [503,404, 403]:
-            evlogger.error("No Available Service. [{}]".format(response.status_code))
+        if response.status_code in [503,404, 403, 500]:
+            evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
             return response.status_code
 
         response = response.json()
@@ -400,10 +400,8 @@ def case_run(case):
     # param 3: Connector
     # 케이스 별로 사전 상태변수 및 오류코드 세팅 후 Request 요청
 
-    charger = Charger(charger_id = "01040001000101")
+    charger = Charger(charger_id = "01040001100101")
     # charger = Charger("010400001", "010400001100A", "01")
-
-    retval = None
 
     while True:
         charger.init_local_var()
