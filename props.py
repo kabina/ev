@@ -6,7 +6,7 @@ chost = "https://devevspcharger.uplus.co.kr"
 urls = {
     "login": host+"/adm/cmm-api/v1/AUTH/login",
     "authorize":chost+"/api/v1/OCPP/authorize/999332",
-    "boot":chost+"/api/v1/OCPP/bootNotification/999332",
+    "bootNotification":chost+"/api/v1/OCPP/bootNotification/999332",
     "dataTransferHeartbeat":chost+"/api/v1/OCPP/dataTransfer/999332",
     "prepare":chost+"/api/v1/OCPP/statusNotification/999332",
     "dataTransferTariff":chost+"/api/v1/OCPP/dataTransferTariff/999332",
@@ -23,7 +23,7 @@ headers={
 api_headers={
         "authorize":
     ["X-EVC-RI","X-EVC-BOX","X-EVC-MDL","X-EVC-OS"],
-        "boot":
+        "bootNotification":
     ["X-EVC-RI","X-EVC-BOX","X-EVC-MDL","X-EVC-OS"],
         "dataTransferHeartbeat":
     ["X-EVC-RI","X-EVC-BOX","X-EVC-CON"],
@@ -126,7 +126,7 @@ api_params = {"authorize":{
             "connectorId":"A",
             "meterStart":"222222",
             "timestamp":"",
-        }, "boot":{
+        }, "bootNotification":{
             "reason":"ApplicationReset",
             "chargePointSerialNumber":"C2313123131231232",
             "chargePointVendor":"LGE",
@@ -162,7 +162,7 @@ api_params = {"authorize":{
 """
 
 api_response = {
-    "boot":{
+    "bootNotification":{
         "currentTime":["M",None], # should be changed to real
         "interval":["M","heartbeatInterval"],
         "status":["M","status"],

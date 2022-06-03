@@ -66,7 +66,7 @@ class Charger(Server):
             "connectorId": None,
             "status": "Available",
             "errorCode": "NoError",
-            "boot_reason": None,
+            "bootNotification_reason": None,
             "stopTransaction_reason": None,
             "statusNotification_reason": None,
             "meterStart": None,
@@ -101,12 +101,11 @@ class Charger(Server):
             "meterStart": lambda x: self.local_var[x],
             "meterStop": lambda x: self.local_var[x],
             "errorCode": lambda x: self.local_var[x],
-            "boot_reason": lambda x: self.local_var[x],
+            "bootNotification_reason": lambda x: self.local_var[x],
             "idTag": lambda x: idTags[random.randrange(0, len(idTags))],
             "stopTransaction_reason": lambda x: self.local_var[x],
             "statusNotification_reason": lambda x: self.local_var[x],
         }
-
 
     def init_local_var(self,):
         fixed = [
@@ -129,11 +128,6 @@ class Charger(Server):
     def update_var(self, item, value):
         self.local_var[item] = value
 
-
-    # def update_var(self, *args, **kwargs):
-    #     for item in kwargs:
-    #         self.local_var[item[0]] = item[1]
-
     def login(self, userid, password):
 
         data = {"userId": userid, "userPw": password}
@@ -154,7 +148,7 @@ class Charger(Server):
 
     def get_sampledValue(self):
         self.meter_update(command="meterValues")
-        value = [
+        return [
             {   "measurand": "Current.Import", "phase": "L1", "unit": "A", "value":
                 "{:.1f}".format(self.sampled_value["cimport"]),  # Wh Value
             }, {"measurand": "Voltage", "phase": "L1", "unit": "V", "value":
@@ -167,7 +161,6 @@ class Charger(Server):
                 "{:.1f}".format(self.sampled_value["paimport"])
             }
         ]
-        return value
 
     def send_response(response):
         print(response)
@@ -221,7 +214,7 @@ class Charger(Server):
                     newParam[item[0]] = self.get_sampledValue()
                 else:
                     newParam[item[0]] = self.ltouch_parameter(item[1], command=command)
-            elif item[0] == "reason" and command in ["boot", "stopTransaction", "statusNotification"]:
+            elif item[0] == "reason" and command in ["bootNotification", "stopTransaction", "statusNotification"]:
                 newParam[item[0]] = self.setter[command+"_"+item[0]](command+"_"+item[0])
             elif item[0] in self.setter :
                 newParam[item[0]] = self.setter[item[0]](item[0])
@@ -354,7 +347,7 @@ class Charger(Server):
         parameter=props.api_params[command]
 
         def set_header(header, headers):
-            if command == "boot":
+            if command == "bootNotification":
                 ri = "boot"
             elif command == "dataTransferHeartbeat":
                 ri = "heartbeat"
@@ -383,7 +376,7 @@ class Charger(Server):
         self.req_post_process(parameter, command)
 
         # header["Authorization"] = "Bearer {}".format(self.accessToken)
-        if command in ["boot", "authorize", "dataTransferHeartbeat"]:
+        if command in ["bootNotification", "authorize", "dataTransferHeartbeat"]:
             header = set_header(header, props.api_headers[command])
 
         data = json.dumps(parameter)
@@ -397,29 +390,20 @@ class Charger(Server):
         if response.status_code in [503,404, 403, 500]:
             evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
             self.local_var["status"] = "ServerError"
-            return [self.local_var["X-EVC-BOX"],
-                    self.local_var["idTag"],
-                    header["X-EVC-RI"],
-                    self.local_var["status"],
-                    command,
-                    self.local_var["transactionId"],
-                    str(parameter),
-                    str(response)
-                    ]
-
-        response = response.json()
-
-        evlogger.info("<"*10+"수신 DATA"+"<"*10)
-        evlogger.info(response)
-
-        if command not in props.api_response :
-            evlogger.warning("NO response checker for {}".format(command))
         else:
-            self.check_response(response, props.api_response[command])
+            response = response.json()
 
-        # 정상 Response를 받은 경우 아래 수행
-        if not self.local_var["responseFailure"]:
-            self.resp_post_process(response, command)
+            evlogger.info("<"*10+"수신 DATA"+"<"*10)
+            evlogger.info(response)
+
+            if command not in props.api_response :
+                evlogger.warning("NO response checker for {}".format(command))
+            else:
+                self.check_response(response, props.api_response[command])
+
+            # 정상 Response를 받은 경우 아래 수행
+            if not self.local_var["responseFailure"]:
+                self.resp_post_process(response, command)
 
         return [self.local_var["X-EVC-BOX"],
                 self.local_var["idTag"],
@@ -467,7 +451,7 @@ def case_run(case):
                 charger.update_var("errorCode", task[2])
                 charger.update_var("statusNotification_reason", task[3])
             row= charger.make_request(command=task[0], status=task[1])
-        elif task[0] in ["boot", "stopTransaction"] :
+        elif task[0] in ["bootNotification", "stopTransaction"] :
             # 부팅, 종료(정지) 이유 등록
             charger.update_var(task[0]+"_reason", task[1])
             row =  charger.make_request(command=task[0])
@@ -493,6 +477,7 @@ def case_run(case):
 
         else:
             row = charger.make_request(command=task[0])
+
         evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
         evlogger.info(charger.local_var)
         evlogger.info("="*60)
