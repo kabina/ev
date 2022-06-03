@@ -20,6 +20,7 @@ import json
 import props
 import scenario
 import time
+import urllib3
 from evlogger import Logger
 
 logger = Logger()
@@ -30,14 +31,13 @@ evlogger = logger.initLogger()
 idTags = [
     "5555222233334444",
     "3333222233334444",
-    "1111222233336666",
+    "1111222233334444",
     "1010202030306060"
 ]
 
 
 class Server(metaclass=ABCMeta):
     @abstractmethod
-
     def make_request(self, request_type):
         pass
 
@@ -54,7 +54,7 @@ class Charger(Server):
 
     def __init__(self, charger_id=None):
 
-        if charger_id is None or len(charger_id) !=14 :
+        if charger_id is None or len(charger_id) != 14:
             logger.error("충전기ID 오류로 충전기를 생성 할 수 없습니다.")
             return
 
@@ -107,7 +107,7 @@ class Charger(Server):
             "statusNotification_reason": lambda x: self.local_var[x],
         }
 
-    def init_local_var(self,):
+    def init_local_var(self, ):
         fixed = [
             "vendorId",
             "X-EVC-BOX",
@@ -137,29 +137,29 @@ class Charger(Server):
         self.accessToken = response_dict["payload"]["accessToken"]
 
     def meter_update(self, command=None):
-        self.sampled_value["cimport"] += self.sampled_value["cimport"] + random.uniform(-1,1)
-        self.sampled_value["voltage"] = self.sampled_value["voltage"] + random.uniform(-1,1)
-        self.sampled_value["eairegister"] = (self.sampled_value["eairegister"]+1000 +
-                                    random.uniform(-1,1) ) if command == "meterValues" else 0
+        self.sampled_value["cimport"] += self.sampled_value["cimport"] + random.uniform(-1, 1)
+        self.sampled_value["voltage"] = self.sampled_value["voltage"] + random.uniform(-1, 1)
+        self.sampled_value["eairegister"] = (self.sampled_value["eairegister"] + 1000 +
+                                             random.uniform(-1, 1)) if command == "meterValues" else 0
         self.sampled_value["soc"] = self.sampled_value["soc"]
-        self.sampled_value["paimport"] += self.sampled_value["paimport"] + random.uniform(-1,1)
+        self.sampled_value["paimport"] += self.sampled_value["paimport"] + random.uniform(-1, 1)
 
-        self.update_var("meterStop",self.sampled_value["paimport"])
+        self.update_var("meterStop", self.sampled_value["paimport"])
 
     def get_sampledValue(self):
         self.meter_update(command="meterValues")
         return [
-            {   "measurand": "Current.Import", "phase": "L1", "unit": "A", "value":
+            {"measurand": "Current.Import", "phase": "L1", "unit": "A", "value":
                 "{:.1f}".format(self.sampled_value["cimport"]),  # Wh Value
-            }, {"measurand": "Voltage", "phase": "L1", "unit": "V", "value":
+             }, {"measurand": "Voltage", "phase": "L1", "unit": "V", "value":
                 "{:.1f}".format(self.sampled_value["voltage"]),
-            }, {"measurand": "Energy.Active.Import.Register", "unit": "Wh", "value":
+                 }, {"measurand": "Energy.Active.Import.Register", "unit": "Wh", "value":
                 "{:.1f}".format(self.sampled_value["eairegister"])
-            }, {"measurand": "SoC", "unit": "%", "value":
-                "{}".format(self.sampled_value["soc"],)
-            }, {"measurand": "Power.Active.Import", "unit": "W", "value":
+                     }, {"measurand": "SoC", "unit": "%", "value":
+                "{}".format(self.sampled_value["soc"], )
+                         }, {"measurand": "Power.Active.Import", "unit": "W", "value":
                 "{:.1f}".format(self.sampled_value["paimport"])
-            }
+                             }
         ]
 
     def send_response(response):
@@ -179,17 +179,17 @@ class Charger(Server):
         Raises:
           None.
         """
-        newParam = []
+        new_param = []
         for item in parameter:
             if type(item) is dict:
-                newParam.append(self.touch_parameter(item, command=command))
+                new_param.append(self.touch_parameter(item, command=command))
             elif type(item) is list:
-                newParam.append(self.ltouch_parameter(item, command=command))
+                new_param.append(self.ltouch_parameter(item, command=command))
             elif item in self.setter:
-                newParam.append(self.setter[item](item))
+                new_param.append(self.setter[item](item))
             else:
-                newParam.append(item)
-        return newParam
+                new_param.append(item)
+        return new_param
 
     def touch_parameter(self, parameter, command=None):
         """Request시 정의된 JSON내 변경이 필요한 항목을 탐색하여 수정함.
@@ -205,22 +205,22 @@ class Charger(Server):
         Raises:
           None.
         """
-        newParam = {}
+        new_param = {}
         for item in parameter.items():
-            if type(item[1]) is dict :
-                newParam[item[0]] = self.touch_parameter(item[1], command=command)
+            if type(item[1]) is dict:
+                new_param[item[0]] = self.touch_parameter(item[1], command=command)
             elif type(item[1]) is list:
-                if command == "meterValues" and item[0] == "sampledValue" :
-                    newParam[item[0]] = self.get_sampledValue()
+                if command == "meterValues" and item[0] == "sampledValue":
+                    new_param[item[0]] = self.get_sampledValue()
                 else:
-                    newParam[item[0]] = self.ltouch_parameter(item[1], command=command)
+                    new_param[item[0]] = self.ltouch_parameter(item[1], command=command)
             elif item[0] == "reason" and command in ["bootNotification", "stopTransaction", "statusNotification"]:
-                newParam[item[0]] = self.setter[command+"_"+item[0]](command+"_"+item[0])
-            elif item[0] in self.setter :
-                newParam[item[0]] = self.setter[item[0]](item[0])
+                new_param[item[0]] = self.setter[command + "_" + item[0]](command + "_" + item[0])
+            elif item[0] in self.setter:
+                new_param[item[0]] = self.setter[item[0]](item[0])
             else:
-                newParam[item[0]]=item[1]
-        return newParam
+                new_param[item[0]] = item[1]
+        return new_param
 
     def check_response(self, diff_from_items, diff_to_items):
         # from_item : response
@@ -246,23 +246,23 @@ class Charger(Server):
                 else:
                     msg = "No Response Item '{}'".format(to_item[0])
                     evlogger.error(msg)
-                    if self.stop_by_error :
+                    if self.stop_by_error:
                         raise Exception(msg)
             # 데이터타입이 List인 경우 (반드시 Element는 1개 이상의 Dict임)
             elif type(to_item[1]) is list and type(to_item[1][0]) is dict:
                 # tariff와 같이 하위 List Element내에 dict가 반복되는 데이터셋 처리
-                if to_item[0] in diff_from_items :
+                if to_item[0] in diff_from_items:
                     for idx in range(len(to_item)):
-                        if diff_from_items[to_item[0]][idx] is dict :
+                        if diff_from_items[to_item[0]][idx] is dict:
                             self.check_response(diff_from_items[to_item[0]][idx], to_item[1][idx])
                         else:
                             break
-                 # evlogger.info("CS Not ready for list in response")
+                # evlogger.info("CS Not ready for list in response")
             elif to_item[0] in diff_from_items:
-                if to_item[1][1] :
+                if to_item[1][1]:
                     self.update_var(to_item[1][1], diff_from_items[to_item[0]])
             else:
-                if(to_item[1][0]=="M"):
+                if to_item[1][0] == "M":
                     evlogger.error("No Response Item '{}'".format(to_item[0]))
                     self.update_var("responseFailure", True)
                 else:
@@ -283,28 +283,27 @@ class Charger(Server):
         Raises:
           None.cmd
         """
-        errorCode = -1
-        errorMsg = None
+        error_code = -1
+        error_msg = None
 
         # 사용자 요금정보(Tariff) 처리
 
-        if command == "dataTransferTariff" :
+        if command == "dataTransferTariff":
             self.local_var["tariff"] = response["data"]["tariff"]
-        if command == "startTransaction" :
-            if response["transactionId"] is None or len(response["transactionId"]) == 0 :
+        if command == "startTransaction":
+            if response["transactionId"] is None or len(response["transactionId"]) == 0:
                 evlogger.error("No Transaction ID")
-                errorMsg = "No Transaction ID"
-                errorCode = 1
-            else :
+                error_msg = "No Transaction ID"
+                error_code = 1
+            else:
                 self.local_var["transactionId"] = response["transactionId"]
-        if command in ["authorize"] and "idTagInfo" in response :
+        if command in ["authorize"] and "idTagInfo" in response:
             self.local_var["status"] = response["idTagInfo"]["status"]
-        if command == "stopTransaction" and "idTagInfo" in response :
+        if command == "stopTransaction" and "idTagInfo" in response:
             self.local_var["status"] = response["idTagInfo"]["status"]
 
-
-        if errorCode > 0 :
-            raise Exception(errorMsg)
+        if error_code > 0:
+            raise Exception(error_msg)
 
     def req_post_process(self, requests, command):
         """충전기는 CS(Central System)로 부터 보내는 요청(Requests) 생성 후 후처리 함
@@ -322,11 +321,10 @@ class Charger(Server):
           None.cmd
         """
 
-        if command == "statusNotification" and "status" in requests :
+        if command == "statusNotification" and "status" in requests:
             self.local_var["status"] = requests["status"]
-        if command == "authorize" and "idTag" in requests :
+        if command == "authorize" and "idTag" in requests:
             self.local_var["idTag"] = requests["idTag"]
-
 
     def make_request(self, command=None, status=None):
         """충전기에서 CS(Central System)으로 보낼 데이터를 생성 하고 송신 후 Response를 수신 함
@@ -344,7 +342,7 @@ class Charger(Server):
         """
 
         url = props.urls[command]
-        parameter=props.api_params[command]
+        parameter = props.api_params[command]
 
         def set_header(header, headers):
             if command == "bootNotification":
@@ -354,13 +352,13 @@ class Charger(Server):
             else:
                 ri = "card"
             get_headers = {
-                        'X-EVC-RI': datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]+"_"+ri,
-                        'X-EVC-MDL': self.local_var["X-EVC-MDL"],
-                        'X-EVC-BOX': self.local_var["X-EVC-BOX"],
-                        'X-EVC-OS': self.local_var["X-EVC-OS"],
-                        'X-EVC-CON': self.local_var["connectorId"],
-                        }
-            for h in headers :
+                'X-EVC-RI': datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3] + "_" + ri,
+                'X-EVC-MDL': self.local_var["X-EVC-MDL"],
+                'X-EVC-BOX': self.local_var["X-EVC-BOX"],
+                'X-EVC-OS': self.local_var["X-EVC-OS"],
+                'X-EVC-CON': self.local_var["connectorId"],
+            }
+            for h in headers:
                 header[h] = get_headers[h]
             return header
 
@@ -381,22 +379,22 @@ class Charger(Server):
 
         data = json.dumps(parameter)
 
-        evlogger.info(">"*10+"송신 헤더"+">"*10)
+        evlogger.info(">" * 10 + "송신 헤더" + ">" * 10)
         evlogger.info(header)
-        evlogger.info(">"*10+"송신 BODY"+">"*10)
+        evlogger.info(">" * 10 + "송신 BODY" + ">" * 10)
         evlogger.info(data)
 
         response = requests.post(url, headers=header, data=data, verify=False)
-        if response.status_code in [503,404, 403, 500]:
+        if response.status_code in [503, 404, 403, 500]:
             evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
             self.local_var["status"] = "ServerError"
         else:
             response = response.json()
 
-            evlogger.info("<"*10+"수신 DATA"+"<"*10)
+            evlogger.info("<" * 10 + "수신 DATA" + "<" * 10)
             evlogger.info(response)
 
-            if command not in props.api_response :
+            if command not in props.api_response:
                 evlogger.warning("NO response checker for {}".format(command))
             else:
                 self.check_response(response, props.api_response[command])
@@ -415,6 +413,7 @@ class Charger(Server):
                 str(response)
                 ]
 
+
 def case_run(case):
     """충전기 기본 시뮬레이트 실행. 시험 케이스에 따라 충전기 동작 수행
     Args:
@@ -432,7 +431,7 @@ def case_run(case):
     # param 3: Connector
     # 케이스 별로 사전 상태변수 및 오류코드 세팅 후 Request 요청
 
-    charger = Charger(charger_id = "01040001100101")
+    charger = Charger(charger_id="01040001100101")
     # charger = Charger("010400001", "010400001100A", "01")
 
     from openpyxl import Workbook
@@ -441,31 +440,33 @@ def case_run(case):
     wb = Workbook()  # create xlsx file
     ws = wb.active
 
-    ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command", "Transaction_ID", "Request Json", "response Json", "variables"])
+    ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command",
+               "Transaction_ID", "Request Json", "response Json", "variables"])
     charger.init_local_var()
+
     for task in case:
         row = None
 
-        if task[0] == "statusNotification" :
-            if len(task) > 2: # 2nd element(arg)가 있는 경우만
+        if task[0] == "statusNotification":
+            if len(task) > 2:  # 2nd element(arg)가 있는 경우만
                 charger.update_var("errorCode", task[2])
                 charger.update_var("statusNotification_reason", task[3])
-            row= charger.make_request(command=task[0], status=task[1])
-        elif task[0] in ["bootNotification", "stopTransaction"] :
+            row = charger.make_request(command=task[0], status=task[1])
+        elif task[0] in ["bootNotification", "stopTransaction"]:
             # 부팅, 종료(정지) 이유 등록
-            charger.update_var(task[0]+"_reason", task[1])
-            row =  charger.make_request(command=task[0])
-        elif task[0]== "meterValue":
-            for i in range(1, random.randrange(5,10)):
+            charger.update_var(task[0] + "_reason", task[1])
+            row = charger.make_request(command=task[0])
+        elif task[0] == "meterValue":
+            for i in range(1, random.randrange(5, 10)):
                 row = charger.make_request(command=task[0])
                 time.sleep(1)
         elif task[0] == "dataTransferHeartbeat":
             # heartbeat은 10번만 보냄
             if len(task) == 1 or task[1] is None:
-                for i in range(1, random.randrange(5,10)):
+                for i in range(1, random.randrange(5, 10)):
                     row = charger.make_request(command=task[0])
                     # heartbeatInterval에 따라 주기적으로 전송
-                    #time.sleep(charger.local_var["heartbeatInterval"])
+                    # time.sleep(charger.local_var["heartbeatInterval"])
                     time.sleep(1)
 
             elif task[1] == -1:
@@ -473,14 +474,13 @@ def case_run(case):
                     row = charger.make_request(command=task[0])
                     # heartbeatInterval에 따라 주기적으로 전송
                     time.sleep(1)
-                    #time.sleep(charger.local_var["heartbeatInterval"])
-
+                    # time.sleep(charger.local_var["heartbeatInterval"])
         else:
             row = charger.make_request(command=task[0])
 
-        evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
+        evlogger.info("=" * 20 + "최종 충전기 내부 변수 상태" + "=" * 18)
         evlogger.info(charger.local_var)
-        evlogger.info("="*60)
+        evlogger.info("=" * 60)
         time.sleep(1)
 
         ws.append(row)
@@ -488,8 +488,8 @@ def case_run(case):
         """Excel Cell width and style setting
         """
         cell_width = [15, 20, 25, 15, 20, 20, 40, 40]
-        for idx, w in enumerate(cell_width) :
-            ws.column_dimensions[chr(ord("A")+idx)].width = w
+        for idx, w in enumerate(cell_width):
+            ws.column_dimensions[chr(ord("A") + idx)].width = w
         border = Border(bottom=Side(style="thick"))
         for cell in ws["1:1"]:
             cell.border = border
@@ -497,7 +497,6 @@ def case_run(case):
     wb.save("./output.xlsx")
 
 
-import urllib3
 # exclude SSL Warning message
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
