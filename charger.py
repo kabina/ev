@@ -304,9 +304,36 @@ class Charger(Server):
                 errorCode = 1
             else :
                 self.local_var["transactionId"] = response["transactionId"]
+        if command in ["authorize"] and "idTagInfo" in response :
+            self.local_var["status"] = response["idTagInfo"]["status"]
+        if command == "stopTransaction" and "idTagInfo" in response :
+            self.local_var["status"] = response["idTagInfo"]["status"]
+
 
         if errorCode > 0 :
             raise Exception(errorMsg)
+
+    def req_post_process(self, requests, command):
+        """충전기는 CS(Central System)로 부터 보내는 요청(Requests) 생성 후 후처리 함
+
+        Args:
+          requests : CS로 보내는 요청
+          command : 충전기에서 서버로 보낸 명령(authorize, boot, startTransactionRequest ... )
+
+        Returns:
+          errorCode: -1 : No error
+                      > 1 : Error
+          errorMsg: error message.
+
+        Raises:
+          None.cmd
+        """
+
+        if command == "statusNotification" and "status" in requests :
+            self.local_var["status"] = requests["status"]
+        if command == "authorize" and "idTag" in requests :
+            self.local_var["idTag"] = requests["idTag"]
+
 
     def make_request(self, command=None, status=None):
         """충전기에서 CS(Central System)으로 보낼 데이터를 생성 하고 송신 후 Response를 수신 함
@@ -352,6 +379,9 @@ class Charger(Server):
 
         self.disp_header(command)
         header = props.headers
+
+        self.req_post_process(parameter, command)
+
         # header["Authorization"] = "Bearer {}".format(self.accessToken)
         if command in ["boot", "authorize", "dataTransferHeartbeat"]:
             header = set_header(header, props.api_headers[command])
@@ -366,7 +396,16 @@ class Charger(Server):
         response = requests.post(url, headers=header, data=data, verify=False)
         if response.status_code in [503,404, 403, 500]:
             evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
-            return response.status_code
+            self.local_var["status"] = "ServerError"
+            return [self.local_var["X-EVC-BOX"],
+                    self.local_var["idTag"],
+                    header["X-EVC-RI"],
+                    self.local_var["status"],
+                    command,
+                    self.local_var["transactionId"],
+                    str(parameter),
+                    str(response)
+                    ]
 
         response = response.json()
 
@@ -382,7 +421,15 @@ class Charger(Server):
         if not self.local_var["responseFailure"]:
             self.resp_post_process(response, command)
 
-        return parameter, response
+        return [self.local_var["X-EVC-BOX"],
+                self.local_var["idTag"],
+                header["X-EVC-RI"],
+                self.local_var["status"],
+                command,
+                self.local_var["transactionId"],
+                str(parameter),
+                str(response)
+                ]
 
 def case_run(case):
     """충전기 기본 시뮬레이트 실행. 시험 케이스에 따라 충전기 동작 수행
@@ -404,57 +451,66 @@ def case_run(case):
     charger = Charger(charger_id = "01040001100101")
     # charger = Charger("010400001", "010400001100A", "01")
 
-    xlsx_body = []
-
-    print(xlsx_body)
-
     from openpyxl import Workbook
+    from openpyxl.styles import Font, Border, Side, Alignment, PatternFill, Protection
 
     wb = Workbook()  # create xlsx file
     ws = wb.active
-    ws.append(["command", "request", "response", "variables"])
+
+    ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command", "Transaction_ID", "Request Json", "response Json", "variables"])
     charger.init_local_var()
     for task in case:
-        rows = []
-        rows.append(task[0])
+        row = None
+
         if task[0] == "statusNotification" :
             if len(task) > 2: # 2nd element(arg)가 있는 경우만
                 charger.update_var("errorCode", task[2])
                 charger.update_var("statusNotification_reason", task[3])
-            rows.append(charger.make_request(command=task[0], status=task[1]))
+            row= charger.make_request(command=task[0], status=task[1])
         elif task[0] in ["boot", "stopTransaction"] :
             # 부팅, 종료(정지) 이유 등록
             charger.update_var(task[0]+"_reason", task[1])
-            rows.append(charger.make_request(command=task[0]))
+            row =  charger.make_request(command=task[0])
         elif task[0]== "meterValue":
             for i in range(1, random.randrange(5,10)):
-                rows.append(charger.make_request(command=task[0]))
+                row = charger.make_request(command=task[0])
                 time.sleep(1)
         elif task[0] == "dataTransferHeartbeat":
             # heartbeat은 10번만 보냄
             if len(task) == 1 or task[1] is None:
                 for i in range(1, random.randrange(5,10)):
-                    rows.append(charger.make_request(command=task[0]))
+                    row = charger.make_request(command=task[0])
                     # heartbeatInterval에 따라 주기적으로 전송
                     #time.sleep(charger.local_var["heartbeatInterval"])
                     time.sleep(1)
 
             elif task[1] == -1:
                 while True:
-                    rows.append(charger.make_request(command=task[0]))
+                    row = charger.make_request(command=task[0])
                     # heartbeatInterval에 따라 주기적으로 전송
                     time.sleep(1)
                     #time.sleep(charger.local_var["heartbeatInterval"])
 
         else:
-            rows.append(charger.make_request(command=task[0]))
+            row = charger.make_request(command=task[0])
         evlogger.info("="*20+"최종 충전기 내부 변수 상태"+"="*18)
         evlogger.info(charger.local_var)
         evlogger.info("="*60)
         time.sleep(1)
-        #rows.append(charger.local_var.values())
-        ws.append([str(rows)])
-        wb.save("./output.xlsx")
+
+        ws.append(row)
+
+        """Excel Cell width and style setting
+        """
+        cell_width = [15, 20, 25, 15, 20, 20, 40, 40]
+        for idx, w in enumerate(cell_width) :
+            ws.column_dimensions[chr(ord("A")+idx)].width = w
+        border = Border(bottom=Side(style="thick"))
+        for cell in ws["1:1"]:
+            cell.border = border
+
+    wb.save("./output.xlsx")
+
 
 import urllib3
 # exclude SSL Warning message
