@@ -453,8 +453,8 @@ def case_run(case):
     """
     charger.update_var("meterStart", random.randrange(10000, 12000))
     charger.update_var("cmeter", charger.local_var["meterStart"])
-
-    for task in case:
+    from tqdm import tqdm
+    for task in tqdm(case):
         if task[0] == "statusNotification":
             if len(task) > 2:  # 2nd element(arg)가 있는 경우만
                 charger.update_var("errorCode", task[2])
