@@ -69,7 +69,8 @@ class Charger(Server):
             "bootNotification_reason": None,
             "stopTransaction_reason": None,
             "statusNotification_reason": None,
-            "meterStart": None,
+            "meterStart": 0,
+            "cmeter":0,
             "meterStop": None,
             "idTag": None,
             "X-EVC-MDL": "LGE-123",
@@ -115,6 +116,9 @@ class Charger(Server):
             "X-EVC-OS",
             "heartbeatInterval",
             "connectorId",
+            "cmeter",
+            "meterStart",
+            "meterStop",
         ]
         for item in self.local_var:
             if item not in fixed:
@@ -144,7 +148,8 @@ class Charger(Server):
         self.sampled_value["soc"] = self.sampled_value["soc"]
         self.sampled_value["paimport"] += self.sampled_value["paimport"] + random.uniform(-1, 1)
 
-        self.update_var("meterStop", self.sampled_value["paimport"])
+        self.update_var("meterStop", self.local_var["meterStart"]+self.sampled_value["eairegister"])
+        self.update_var("cmeter", self.local_var["cmeter"]+int(self.sampled_value["eairegister"]))
 
     def get_sampledValue(self):
         self.meter_update(command="meterValues")
@@ -365,8 +370,8 @@ class Charger(Server):
         # 기본 템플릿 기반으로 파라미터 설정
         parameter = self.touch_parameter(parameter, command=command)
 
-        if status is not None:
-            parameter["status"] = status
+        # if status is not None:
+        #     parameter["status"] = status
 
         self.disp_header(command)
         header = props.headers
@@ -409,6 +414,7 @@ class Charger(Server):
                 self.local_var["status"],
                 command,
                 self.local_var["transactionId"],
+                self.local_var["cmeter"],
                 str(parameter),
                 str(response)
                 ]
@@ -441,42 +447,23 @@ def case_run(case):
     ws = wb.active
 
     ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command",
-               "Transaction_ID", "Request Json", "response Json", "variables"])
+               "Transaction_ID", "Meter", "Request Json", "response Json", "variables"])
     charger.init_local_var()
+    """초기 충전기 미터값 설정
+    """
+    charger.update_var("meterStart", random.randrange(10000, 12000))
+    charger.update_var("cmeter", charger.local_var["meterStart"])
 
     for task in case:
-        row = None
-
         if task[0] == "statusNotification":
             if len(task) > 2:  # 2nd element(arg)가 있는 경우만
                 charger.update_var("errorCode", task[2])
                 charger.update_var("statusNotification_reason", task[3])
-            row = charger.make_request(command=task[0], status=task[1])
+            charger.update_var("status", task[1])
         elif task[0] in ["bootNotification", "stopTransaction"]:
             # 부팅, 종료(정지) 이유 등록
             charger.update_var(task[0] + "_reason", task[1])
-            row = charger.make_request(command=task[0])
-        elif task[0] == "meterValue":
-            for i in range(1, random.randrange(5, 10)):
-                row = charger.make_request(command=task[0])
-                time.sleep(1)
-        elif task[0] == "dataTransferHeartbeat":
-            # heartbeat은 10번만 보냄
-            if len(task) == 1 or task[1] is None:
-                for i in range(1, random.randrange(5, 10)):
-                    row = charger.make_request(command=task[0])
-                    # heartbeatInterval에 따라 주기적으로 전송
-                    # time.sleep(charger.local_var["heartbeatInterval"])
-                    time.sleep(1)
-
-            elif task[1] == -1:
-                while True:
-                    row = charger.make_request(command=task[0])
-                    # heartbeatInterval에 따라 주기적으로 전송
-                    time.sleep(1)
-                    # time.sleep(charger.local_var["heartbeatInterval"])
-        else:
-            row = charger.make_request(command=task[0])
+        row = charger.make_request(command=task[0])
 
         evlogger.info("=" * 20 + "최종 충전기 내부 변수 상태" + "=" * 18)
         evlogger.info(charger.local_var)
@@ -487,7 +474,7 @@ def case_run(case):
 
         """Excel Cell width and style setting
         """
-        cell_width = [15, 20, 25, 15, 20, 20, 40, 40]
+        cell_width = [15, 20, 25, 15, 15, 15, 10, 40, 40]
         for idx, w in enumerate(cell_width):
             ws.column_dimensions[chr(ord("A") + idx)].width = w
         border = Border(bottom=Side(style="thick"))
@@ -495,7 +482,6 @@ def case_run(case):
             cell.border = border
 
     wb.save("./output.xlsx")
-
 
 # exclude SSL Warning message
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

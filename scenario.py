@@ -33,10 +33,16 @@ normal_case = [
     ["startTransaction"],
     ["statusNotification", "Charging"],
     ["meterValues"],
+    ["meterValues"],
+    ["meterValues"],
+    ["meterValues"],
+    ["meterValues"],
     ["stopTransaction", "Finished"],
     ["statusNotification", "Finishing"],
     ["statusNotification", "Available"],
-    ["dataTransferHeartbeat", None]
+    ["dataTransferHeartbeat", None],
+    ["dataTransferHeartbeat", None],
+    ["dataTransferHeartbeat", None],
 ]
 
 # 충전 중 비상정지 후 리부팅
@@ -48,6 +54,8 @@ error_in_charge = [
     ["dataTransferTariff"],
     ["startTransaction"],
     ["statusNotification", "Charging"],
+    ["meterValues"],
+    ["meterValues"],
     ["meterValues"],
     ["stopTransaction", "EmergencyStop"],
     ["boot"]
@@ -97,5 +105,7 @@ remote_stop_transaction = [
     ["stopTransaction", "Remote"],
     ["statusNotification", "Finishing"],
     ["statusNotification", "Available"],
-    ["dataTransferHeartbeat"]
+    ["dataTransferHeartbeat"],
+    ["dataTransferHeartbeat"],
+    ["dataTransferHeartbeat"],
 ]
