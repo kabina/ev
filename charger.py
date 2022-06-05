@@ -22,18 +22,12 @@ import scenario
 import time
 import urllib3
 from evlogger import Logger
+import multiprocessing
+from tqdm import tqdm
 
 logger = Logger()
 evlogger = logger.initLogger()
 
-from openpyxl import Workbook
-from openpyxl.styles import Font, Border, Side, Alignment, PatternFill, Protection
-
-wb = Workbook()  # create xlsx file
-ws = wb.active
-
-ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command",
-           "Transaction_ID", "MeterStart", "MeterStop", "Meter", "Charge_Amount", "Request Json", "response Json", "variables"])
 
 """랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
 """
@@ -302,7 +296,8 @@ class Charger(Server):
         # 사용자 요금정보(Tariff) 처리
 
         if command == "dataTransferTariff":
-            self.local_var["tariff"] = response["data"]["tariff"]
+            if "data" in response and "tariff" in response["data"] :
+                self.local_var["tariff"] = response["data"]["tariff"]
         if command == "startTransaction":
             if response["transactionId"] is None or len(response["transactionId"]) == 0:
                 evlogger.error("No Transaction ID")
@@ -315,8 +310,7 @@ class Charger(Server):
 
         if command == "stopTransaction" and "idTagInfo" in response:
             self.local_var["status"] = response["idTagInfo"]["status"]
-            self.sampled_value["eairegister"] = 0
-            self.local_var["meterStart"] = self.local_var["cmeter"]
+
 
         if error_code > 0:
             raise Exception(error_msg)
@@ -342,8 +336,10 @@ class Charger(Server):
         if command == "authorize" and "idTag" in requests:
             self.local_var["idTag"] = requests["idTag"]
             self.sampled_value["eairegister"] = 0
+            self.local_var["meterStart"] = self.local_var["cmeter"]
         if command == "stopTransaction" :
             self.local_var["meterStop"] = self.local_var["cmeter"]
+            requests["meterStop"] = self.local_var["meterStop"]
 
 
     def make_request(self, command=None, status=None):
@@ -438,10 +434,10 @@ class Charger(Server):
                 ]
 
 
-def case_run(charger, case):
+def case_run(charger, case) -> list:
     """충전기 기본 시뮬레이트 실행. 시험 케이스에 따라 충전기 동작 수행
     Args:
-      case(Dictionary) : scenario 파일에 정의된 case 입력 받음
+      charger : 충전기 instance
 
     Returns:
       None.
@@ -456,8 +452,7 @@ def case_run(charger, case):
 
     charger.init_local_var()
 
-    from tqdm import tqdm
-
+    out_list = []
     for task in tqdm(case):
         if task[0] == "statusNotification":
             if len(task) > 2:  # 2nd element(arg)가 있는 경우만
@@ -473,20 +468,29 @@ def case_run(charger, case):
         if task[0] == "meterValues":
             for _ in range(random.randrange(1,10)):
                 row = charger.make_request(command=task[0])
-                ws.append(row)
+                out_list.append(row)
         else:
             row = charger.make_request(command=task[0])
-            ws.append(row)
+            out_list.append(row)
 
         evlogger.info("=" * 20 + "최종 충전기 내부 변수 상태" + "=" * 18)
         evlogger.info(charger.local_var)
         evlogger.info("=" * 60)
         # time.sleep(0.1)
+    return out_list
 
-
-def main():
+def main(charger_id):
     # exclude SSL Warning message
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Border, Side, Alignment, PatternFill, Protection
+
+    wb = Workbook()  # create xlsx file
+    ws = wb.active
+
+    ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command",
+               "Transaction_ID", "MeterStart", "MeterStop", "Meter", "Charge_Amount", "Request Json", "response Json",
+               "variables"])
 
     charger = Charger(charger_id="0104000110010")
     # charger = Charger("010400001", "010400001100A", "01")
@@ -498,12 +502,15 @@ def main():
     charger.update_var("cmeter", charger.local_var["meterStart"])
     # charger.update_var("cmeter", charger.local_var["meterStop"])
 
-    loop_cnt = 5
+    loop_cnt = 2
     print(f"시나리오: 총 {loop_cnt}회 충전 수행")
 
-    wsum = 0
+    for l in case_run(charger, scenario.heartbeat_after_boot):
+        ws.append(l)
+
     for _ in range(loop_cnt):
-        case_run(charger, scenario.normal_case)
+        for l in case_run(charger, scenario.normal_case_without_boot):
+            ws.append(l)
 
     # case_run(scenario.error_after_charging)
     # case_run(scenario.error_in_charge)
@@ -525,12 +532,23 @@ def main():
     for cell in ws["1:1"]:
         cell.border = border
 
-    wb.save("./output.xlsx")
+    wb.save(charger_id+".xlsx")
 
+# 작업 리스트를 반환
+def getWorkList():
+    work_list = []
+
+    for i in tqdm(range(0, 8)):
+        work_list.append('charger_' + str(i))
+
+    return work_list
 
 if __name__ == "__main__":
     try :
-        main()
+        pool = multiprocessing.Pool(processes=4)  # 3개의 processes 사용
+        pool.map(main, getWorkList())
+        pool.close()
+        pool.join()
     except PermissionError as e:
         print("output.xlsx 파일이 사용 중입니다. 쓰기 실패.")
 
