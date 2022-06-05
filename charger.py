@@ -26,6 +26,15 @@ from evlogger import Logger
 logger = Logger()
 evlogger = logger.initLogger()
 
+from openpyxl import Workbook
+from openpyxl.styles import Font, Border, Side, Alignment, PatternFill, Protection
+
+wb = Workbook()  # create xlsx file
+ws = wb.active
+
+ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command",
+           "Transaction_ID", "MeterStart", "MeterStop", "Meter", "Charge_Amount", "Request Json", "response Json", "variables"])
+
 """랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
 """
 idTags = [
@@ -54,8 +63,8 @@ class Charger(Server):
 
     def __init__(self, charger_id=None):
 
-        if charger_id is None or len(charger_id) != 14:
-            logger.error("충전기ID 오류로 충전기를 생성 할 수 없습니다.")
+        if charger_id is None or len(charger_id) != 13:
+            evlogger.error("충전기ID 오류로 충전기를 생성 할 수 없습니다.")
             return
 
         self.stop_by_error = False  # CS로 부터 Response 정보가 부족하더라도 시뮬레이트 계속 작동
@@ -69,9 +78,9 @@ class Charger(Server):
             "bootNotification_reason": None,
             "stopTransaction_reason": None,
             "statusNotification_reason": None,
-            "meterStart": 0,
             "cmeter":0,
-            "meterStop": None,
+            "meterStart": 0,
+            "meterStop": 0,
             "idTag": None,
             "X-EVC-MDL": "LGE-123",
             "X-EVC-BOX": None,
@@ -90,8 +99,8 @@ class Charger(Server):
             "paimport": 0,  # Power.Active.Import 충전기로 지속 충전되는 양 (W)
         }
 
-        self.local_var["X-EVC-BOX"] = charger_id[:12]
-        self.local_var["connectorId"] = charger_id[12:]
+        self.local_var["X-EVC-BOX"] = charger_id[:11]
+        self.local_var["connectorId"] = charger_id[11:12]
 
         self.setter = {
             "timestamp": lambda x: datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z") + "Z",
@@ -143,13 +152,12 @@ class Charger(Server):
     def meter_update(self, command=None):
         self.sampled_value["cimport"] += self.sampled_value["cimport"] + random.uniform(-1, 1)
         self.sampled_value["voltage"] = self.sampled_value["voltage"] + random.uniform(-1, 1)
-        self.sampled_value["eairegister"] = (self.sampled_value["eairegister"] + 1000 +
-                                             random.uniform(-1, 1)) if command == "meterValues" else 0
+        self.sampled_value["eairegister"] = (self.sampled_value["eairegister"] +
+                                             random.randrange(995, 1050)) if command == "meterValues" else 0
         self.sampled_value["soc"] = self.sampled_value["soc"]
         self.sampled_value["paimport"] += self.sampled_value["paimport"] + random.uniform(-1, 1)
 
-        self.update_var("meterStop", self.local_var["meterStart"]+self.sampled_value["eairegister"])
-        self.update_var("cmeter", self.local_var["cmeter"]+int(self.sampled_value["eairegister"]))
+        self.update_var("cmeter", self.local_var["meterStart"]+self.sampled_value["eairegister"])
 
     def get_sampledValue(self):
         self.meter_update(command="meterValues")
@@ -304,14 +312,17 @@ class Charger(Server):
                 self.local_var["transactionId"] = response["transactionId"]
         if command in ["authorize"] and "idTagInfo" in response:
             self.local_var["status"] = response["idTagInfo"]["status"]
+
         if command == "stopTransaction" and "idTagInfo" in response:
             self.local_var["status"] = response["idTagInfo"]["status"]
+            self.sampled_value["eairegister"] = 0
+            self.local_var["meterStart"] = self.local_var["cmeter"]
 
         if error_code > 0:
             raise Exception(error_msg)
 
     def req_post_process(self, requests, command):
-        """충전기는 CS(Central System)로 부터 보내는 요청(Requests) 생성 후 후처리 함
+        """충전기는 CS(Central System)로 부터 보내는 요청(Requests) 생성 후 local variable 등 Update 처리
 
         Args:
           requests : CS로 보내는 요청
@@ -330,6 +341,10 @@ class Charger(Server):
             self.local_var["status"] = requests["status"]
         if command == "authorize" and "idTag" in requests:
             self.local_var["idTag"] = requests["idTag"]
+            self.sampled_value["eairegister"] = 0
+        if command == "stopTransaction" :
+            self.local_var["meterStop"] = self.local_var["cmeter"]
+
 
     def make_request(self, command=None, status=None):
         """충전기에서 CS(Central System)으로 보낼 데이터를 생성 하고 송신 후 Response를 수신 함
@@ -390,7 +405,7 @@ class Charger(Server):
         evlogger.info(data)
 
         response = requests.post(url, headers=header, data=data, verify=False)
-        if response.status_code in [503, 404, 403, 500]:
+        if response.status_code in []: # [503, 404, 403, 500]:
             evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
             self.local_var["status"] = "ServerError"
         else:
@@ -414,13 +429,16 @@ class Charger(Server):
                 self.local_var["status"],
                 command,
                 self.local_var["transactionId"],
+                self.local_var["meterStart"],
+                self.local_var["meterStop"],
                 self.local_var["cmeter"],
+                (max(self.local_var["meterStop"],self.local_var["cmeter"]) - self.local_var["meterStart"]) if command == "stopTransaction" else 0,
                 str(parameter),
                 str(response)
                 ]
 
 
-def case_run(case):
+def case_run(charger, case):
     """충전기 기본 시뮬레이트 실행. 시험 케이스에 따라 충전기 동작 수행
     Args:
       case(Dictionary) : scenario 파일에 정의된 case 입력 받음
@@ -432,28 +450,14 @@ def case_run(case):
       None.
     """
 
-    # param 1: 충전소
-    # param 2: 충전기
-    # param 3: Connector
+    # param 1: 충전기 인스턴스
+    # param 2: 시험 케이스
     # 케이스 별로 사전 상태변수 및 오류코드 세팅 후 Request 요청
 
-    charger = Charger(charger_id="01040001100101")
-    # charger = Charger("010400001", "010400001100A", "01")
-
-    from openpyxl import Workbook
-    from openpyxl.styles import Font, Border, Side, Alignment, PatternFill, Protection
-
-    wb = Workbook()  # create xlsx file
-    ws = wb.active
-
-    ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command",
-               "Transaction_ID", "Meter", "Request Json", "response Json", "variables"])
     charger.init_local_var()
-    """초기 충전기 미터값 설정
-    """
-    charger.update_var("meterStart", random.randrange(10000, 12000))
-    charger.update_var("cmeter", charger.local_var["meterStart"])
+
     from tqdm import tqdm
+
     for task in tqdm(case):
         if task[0] == "statusNotification":
             if len(task) > 2:  # 2nd element(arg)가 있는 경우만
@@ -463,34 +467,70 @@ def case_run(case):
         elif task[0] in ["bootNotification", "stopTransaction"]:
             # 부팅, 종료(정지) 이유 등록
             charger.update_var(task[0] + "_reason", task[1])
-        row = charger.make_request(command=task[0])
+        if task[0] == "authorize":
+            charger.local_var["meterStart"] = charger.local_var["cmeter"]
+
+        if task[0] == "meterValues":
+            for _ in range(random.randrange(1,10)):
+                row = charger.make_request(command=task[0])
+                ws.append(row)
+        else:
+            row = charger.make_request(command=task[0])
+            ws.append(row)
 
         evlogger.info("=" * 20 + "최종 충전기 내부 변수 상태" + "=" * 18)
         evlogger.info(charger.local_var)
         evlogger.info("=" * 60)
-        time.sleep(1)
+        # time.sleep(0.1)
 
-        ws.append(row)
 
-        """Excel Cell width and style setting
-        """
-        cell_width = [15, 20, 25, 15, 15, 15, 10, 40, 40]
-        for idx, w in enumerate(cell_width):
-            ws.column_dimensions[chr(ord("A") + idx)].width = w
-        border = Border(bottom=Side(style="thick"))
-        for cell in ws["1:1"]:
-            cell.border = border
+def main():
+    # exclude SSL Warning message
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    charger = Charger(charger_id="0104000110010")
+    # charger = Charger("010400001", "010400001100A", "01")
+    """초기 충전기 미터값 설정
+    """
+
+    meterstart = random.randrange(100_000, 120_000)
+    charger.update_var("meterStart", meterstart)
+    charger.update_var("cmeter", charger.local_var["meterStart"])
+    # charger.update_var("cmeter", charger.local_var["meterStop"])
+
+    loop_cnt = 5
+    print(f"시나리오: 총 {loop_cnt}회 충전 수행")
+
+    wsum = 0
+    for _ in range(loop_cnt):
+        case_run(charger, scenario.normal_case)
+
+    # case_run(scenario.error_after_charging)
+    # case_run(scenario.error_in_charge)
+    # case_run(scenario.error_just_after_boot)
+    # case_run(scenario.heartbeat_after_boot)
+    # case_run(scenario.no_charge_after_authorize)
+    # case_run(scenario.reserved_after_boot)
+    # case_run(scenario.remote_stop_transaction)
+
+    wsum = charger.local_var["meterStop"] - meterstart
+    print(f"총 {wsum:,} Wh의 전력 충전")
+
+    """Excel Cell width and style setting
+    """
+    cell_width = [15, 20, 25, 15, 15, 15, 15, 15, 10, 10, 40, 40]
+    for idx, w in enumerate(cell_width):
+        ws.column_dimensions[chr(ord("A") + idx)].width = w
+    border = Border(bottom=Side(style="thick"))
+    for cell in ws["1:1"]:
+        cell.border = border
 
     wb.save("./output.xlsx")
 
-# exclude SSL Warning message
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-case_run(scenario.normal_case)
-# case_run(scenario.error_after_charging)
-# case_run(scenario.error_in_charge)
-# case_run(scenario.error_just_after_boot)
-# case_run(scenario.heartbeat_after_boot)
-# case_run(scenario.no_charge_after_authorize)
-# case_run(scenario.reserved_after_boot)
-# case_run(scenario.remote_stop_transaction)
+if __name__ == "__main__":
+    try :
+        main()
+    except PermissionError as e:
+        print("output.xlsx 파일이 사용 중입니다. 쓰기 실패.")
+

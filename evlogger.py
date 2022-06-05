@@ -67,6 +67,6 @@ class Logger:
         __logger.addHandler(fileHandler)
 
         # 로그 레벨 정의
-        __logger.setLevel(logging.DEBUG)
+        __logger.setLevel(logging.FATAL)
 
         return __logger

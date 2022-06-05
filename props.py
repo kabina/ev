@@ -44,7 +44,7 @@ api_headers={
 api_params = {"authorize":{
             "idTag":"5555222233334444",
         }, "statusNotification": {
-            "connectorId": "A",
+            "connectorId": "0",
             "errorCode": "NoError",
             "info": [{
                 "reason": "None",
@@ -56,7 +56,7 @@ api_params = {"authorize":{
             "vendorErrorCode": "",
             "vendorId": "LGE"
         }, "prepare":{
-            "connectorId":"A",
+            "connectorId":"0",
             "errorCode":"NoError",
             "info":{
                 "reason":"None",
@@ -68,7 +68,7 @@ api_params = {"authorize":{
             "vendorErrorCode":"",
             "vendorId":"LGE"
         }, "meterValues":{
-            "connectorId":"A",
+            "connectorId":"0",
             "transactionId":"",
             "meterValue":[
                 {
@@ -123,7 +123,7 @@ api_params = {"authorize":{
             }]
         }, "startTransaction":{
             "idTag":"1111222233334444",
-            "connectorId":"A",
+            "connectorId":"0",
             "meterStart":"222222",
             "timestamp":"",
         }, "bootNotification":{
@@ -141,7 +141,7 @@ api_params = {"authorize":{
             "venderId":"LG",
             "messageId":"Tariff",
             "data":{
-                "connectorId":"01",
+                "connectorId":"0",
                 "idTag":"1111222233335555",
                 "timestamp":""
             }
