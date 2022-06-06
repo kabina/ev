@@ -25,9 +25,6 @@ from evlogger import Logger
 import multiprocessing
 from tqdm import tqdm
 
-logger = Logger()
-evlogger = logger.initLogger()
-
 
 """랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
 """
@@ -37,6 +34,9 @@ idTags = [
     "1111222233334444",
     "1010202030306060"
 ]
+
+logger = Logger()
+evlogger = logger.initLogger()
 
 
 class Server(metaclass=ABCMeta):
@@ -401,7 +401,7 @@ class Charger(Server):
         evlogger.info(data)
 
         response = requests.post(url, headers=header, data=data, verify=False)
-        if response.status_code in []: # [503, 404, 403, 500]:
+        if response.status_code in [503, 404, 403, 500]:
             evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
             self.local_var["status"] = "ServerError"
         else:
@@ -485,6 +485,8 @@ def main(charger_id):
     from openpyxl import Workbook
     from openpyxl.styles import Font, Border, Side, Alignment, PatternFill, Protection
 
+    evlogger = logger.initLogger(logid=charger_id)
+
     wb = Workbook()  # create xlsx file
     ws = wb.active
 
@@ -538,14 +540,14 @@ def main(charger_id):
 def getWorkList():
     work_list = []
 
-    for i in tqdm(range(0, 8)):
+    for i in tqdm(range(0, 6)):
         work_list.append('charger_' + str(i))
 
     return work_list
 
 if __name__ == "__main__":
     try :
-        pool = multiprocessing.Pool(processes=4)  # 3개의 processes 사용
+        pool = multiprocessing.Pool(processes=6)  # 3개의 processes 사용
         pool.map(main, getWorkList())
         pool.close()
         pool.join()

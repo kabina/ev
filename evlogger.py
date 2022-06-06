@@ -23,7 +23,7 @@ class Logger:
         if not os.path.exists(self.filePath):
             os.makedirs(self.filePath)
 
-    def initLogger(self):
+    def initLogger(self, logid=0):
         """
         로거 인스턴스 반환
         """
@@ -49,7 +49,7 @@ class Logger:
 
         # 파일 핸들러 정의
         fileHandler = handlers.TimedRotatingFileHandler(
-            os.path.abspath(f"{self.filePath}logData.log"),
+            os.path.abspath(f"{self.filePath}logData_{logid}.log"),
             when="midnight",
             interval=1,
             backupCount=14,
