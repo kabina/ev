@@ -46,11 +46,11 @@ api_params = {"authorize":{
         }, "statusNotification": {
             "connectorId": "0",
             "errorCode": "NoError",
-            "info": [{
+            "info": {
                 "reason": "None",
                 "cpv": 100,
                 "rv": 11,
-            }],
+            },
             "status": "Available",
             "timestamp": "",
             "vendorErrorCode": "",

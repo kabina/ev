@@ -36,6 +36,7 @@ idTags = [
 ]
 
 logger = Logger()
+global evlogger
 evlogger = logger.initLogger()
 
 
@@ -430,7 +431,8 @@ class Charger(Server):
                 self.local_var["cmeter"],
                 (max(self.local_var["meterStop"],self.local_var["cmeter"]) - self.local_var["meterStart"]) if command == "stopTransaction" else 0,
                 str(parameter),
-                str(response)
+                str(response),
+                str(header),
                 ]
 
 
@@ -440,7 +442,7 @@ def case_run(charger, case) -> list:
       charger : 충전기 instance
 
     Returns:
-      None.
+      out_list : request별 transaction관련 in/out 내역.
 
     Raises:
       None.
@@ -479,22 +481,26 @@ def case_run(charger, case) -> list:
         # time.sleep(0.1)
     return out_list
 
-def main(charger_id):
+def main(charger_id="charger_01"):
     # exclude SSL Warning message
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     from openpyxl import Workbook
     from openpyxl.styles import Font, Border, Side, Alignment, PatternFill, Protection
 
-    evlogger = logger.initLogger(logid=charger_id)
+    # evlogger = logger.initLogger(logid=charger_id)
 
     wb = Workbook()  # create xlsx file
     ws = wb.active
 
     ws.append(["Charger_ID", "Card_Id", "RI", "Status", "Command",
                "Transaction_ID", "MeterStart", "MeterStop", "Meter", "Charge_Amount", "Request Json", "response Json",
-               "variables"])
-
-    charger = Charger(charger_id="0104000110010")
+               "Header"])
+    """ 9자리 : 충전소 (115000001)
+        2자리 : 충전기 (01)
+        1자리 : 커넥터 (0)
+        1자리 : 충전타입(급/중/저) (A)
+    """
+    charger = Charger(charger_id="115000001010A")
     # charger = Charger("010400001", "010400001100A", "01")
     """초기 충전기 미터값 설정
     """
@@ -527,7 +533,7 @@ def main(charger_id):
 
     """Excel Cell width and style setting
     """
-    cell_width = [15, 20, 25, 15, 15, 15, 15, 15, 10, 10, 40, 40]
+    cell_width = [15, 20, 25, 15, 15, 15, 15, 15, 10, 10, 40, 40, 40]
     for idx, w in enumerate(cell_width):
         ws.column_dimensions[chr(ord("A") + idx)].width = w
     border = Border(bottom=Side(style="thick"))
@@ -540,17 +546,18 @@ def main(charger_id):
 def getWorkList():
     work_list = []
 
-    for i in tqdm(range(0, 6)):
+    for i in tqdm(range(0, 1)):
         work_list.append('charger_' + str(i))
 
     return work_list
 
 if __name__ == "__main__":
-    try :
-        pool = multiprocessing.Pool(processes=6)  # 3개의 processes 사용
-        pool.map(main, getWorkList())
-        pool.close()
-        pool.join()
-    except PermissionError as e:
-        print("output.xlsx 파일이 사용 중입니다. 쓰기 실패.")
-
+    main()
+    # try :
+    #     pool = multiprocessing.Pool(processes=1)  # 3개의 processes 사용
+    #     pool.map(main, getWorkList())
+    #     pool.close()
+    #     pool.join()
+    # except PermissionError as e:
+    #     print("output.xlsx 파일이 사용 중입니다. 쓰기 실패.")
+    #
