@@ -19,8 +19,9 @@ import requests
 import json
 import props
 import scenario
-import time
+import time, os
 import urllib3
+import logging
 from evlogger import Logger
 import multiprocessing
 from tqdm import tqdm
@@ -37,7 +38,7 @@ idTags = [
 
 logger = Logger()
 global evlogger
-evlogger = logger.initLogger()
+evlogger = logger.initLogger(loglevel=logging.DEBUG)
 
 
 class Server(metaclass=ABCMeta):
@@ -94,7 +95,7 @@ class Charger(Server):
             "paimport": 0,  # Power.Active.Import 충전기로 지속 충전되는 양 (W)
         }
 
-        self.local_var["X-EVC-BOX"] = charger_id[:11]
+        self.local_var["X-EVC-BOX"] = charger_id[:13]
         self.local_var["connectorId"] = charger_id[11:12]
 
         self.setter = {
@@ -312,6 +313,9 @@ class Charger(Server):
         if command == "stopTransaction" and "idTagInfo" in response:
             self.local_var["status"] = response["idTagInfo"]["status"]
 
+        if command == "bootNotification" and "status" in response:
+            self.local_var["status"] = response["status"]
+
 
         if error_code > 0:
             raise Exception(error_msg)
@@ -520,11 +524,13 @@ def main(charger_id="charger_01"):
         for l in case_run(charger, scenario.normal_case_without_boot):
             ws.append(l)
 
-    # case_run(scenario.error_after_charging)
-    # case_run(scenario.error_in_charge)
-    # case_run(scenario.error_just_after_boot)
-    # case_run(scenario.heartbeat_after_boot)
-    # case_run(scenario.no_charge_after_authorize)
+    for l in case_run(charger, scenario.error_after_charging):
+        ws.append(l)
+
+    # ws.append(case_run(charger, scenario.error_in_charge))
+    # ws.append(case_run(charger, scenario.error_just_after_boot))
+    # ws.append(case_run(charger, scenario.heartbeat_after_boot))
+    # ws.append(case_run(charger, scenario.no_charge_after_authorize))
     # case_run(scenario.reserved_after_boot)
     # case_run(scenario.remote_stop_transaction)
 
@@ -540,7 +546,12 @@ def main(charger_id="charger_01"):
     for cell in ws["1:1"]:
         cell.border = border
 
-    wb.save(charger_id+".xlsx")
+    """엑셀저장 할 파일명 지정, 저장 전에 기존 파일 존재 할 경우, 삭제 후 저장 함
+    """
+    xlsx_file = charger_id+".xlsx"
+    if os.path.isfile(xlsx_file):
+        os.remove(xlsx_file)
+    wb.save(xlsx_file)
 
 # 작업 리스트를 반환
 def getWorkList():

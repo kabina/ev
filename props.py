@@ -41,7 +41,18 @@ api_headers={
     ["X-EVC-RI", "X-EVC-BOX", "X-EVC-MDL"],
 }
 
-api_params = {"authorize":{
+api_params = { "bootNotification":{
+            "reason":"ApplicationReset",
+            "chargePointSerialNumber":"C2313123131231232",
+            "chargePointVendor":"LGE",
+            "chargePointModel":"LGE2323211",
+            "firmwareVersion":"V1.3",
+            "lccid":"usim121331",
+            "imsi":"01023224444",
+            "meterSerialNumber":"CNTER23123123",
+            "rssi":"-80",
+            "entityId":"M2M2442"
+        }, "authorize":{
             "idTag":"5555222233334444",
         }, "statusNotification": {
             "connectorId": "0",
@@ -67,6 +78,12 @@ api_params = {"authorize":{
             "timestamp":"",
             "vendorErrorCode":"",
             "vendorId":"LGE"
+        }, "startTransaction": {
+            "idTag": "1111222233334444",
+            "connectorId": 0,
+            "meterStart": "222222",
+            "timestamp": "",
+
         }, "meterValues":{
             "connectorId":"0",
             "transactionId":"",
@@ -121,22 +138,7 @@ api_params = {"authorize":{
                 "value":"01",
             }]
             }]
-        }, "startTransaction":{
-            "idTag":"1111222233334444",
-            "connectorId":"0",
-            "meterStart":"222222",
-            "timestamp":"",
-        }, "bootNotification":{
-            "reason":"ApplicationReset",
-            "chargePointSerialNumber":"C2313123131231232",
-            "chargePointVendor":"LGE",
-            "chargePointModel":"LGE2323211",
-            "firmwareVersion":"V1.3",
-            "lccid":"usim121331",
-            "imsi":"01023224444",
-            "meterSerialNumber":"CNTER23123123",
-            "rssi":"-80",
-            "entityId":"M2M2442"
+
         }, "dataTransferTariff":{
             "venderId":"LG",
             "messageId":"Tariff",

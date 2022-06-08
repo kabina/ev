@@ -23,12 +23,14 @@ class Logger:
         if not os.path.exists(self.filePath):
             os.makedirs(self.filePath)
 
-    def initLogger(self, logid=0):
+    def initLogger(self, logid=0, loglevel=logging.DEBUG):
         """
         로거 인스턴스 반환
         """
         # 로거 인스턴스 생성
         __logger = logging.getLogger("Logger")
+
+        __logger.setLevel(loglevel)
 
         # =====================================================
         # 포매터 설정
@@ -67,6 +69,6 @@ class Logger:
         __logger.addHandler(fileHandler)
 
         # 로그 레벨 정의
-        __logger.setLevel(logging.DEBUG)
+        # __logger.setLevel(logging.DEBUG)
 
         return __logger
