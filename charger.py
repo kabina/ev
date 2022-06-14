@@ -270,6 +270,8 @@ class Charger(Server):
             elif to_item[0] in diff_from_items:
                 if to_item[1][1]:
                     self.update_var(to_item[1][1], diff_from_items[to_item[0]])
+                elif to_item[0] in self.setter:
+                    self.local_var[to_item[0]] = diff_from_items[to_item[0]]
             else:
                 if to_item[1][0] == "M":
                     evlogger.error("No Response Item '{}'".format(to_item[0]))
@@ -406,7 +408,7 @@ class Charger(Server):
         evlogger.info(data)
 
         response = requests.post(url, headers=header, data=data, verify=False)
-        if response.status_code in [503, 404, 403, 500]:
+        if response.status_code in [503, 404, 403, 500, 401]:
             evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
             self.local_var["status"] = "ServerError"
         else:
@@ -479,6 +481,7 @@ def case_run(charger, case) -> list:
             row = charger.make_request(command=task[0])
             out_list.append(row)
 
+        time.sleep(0.1)
         evlogger.info("=" * 20 + "최종 충전기 내부 변수 상태" + "=" * 18)
         evlogger.info(charger.local_var)
         evlogger.info("=" * 60)
@@ -506,28 +509,30 @@ def main(charger_id="charger_01"):
     """
     charger = Charger(charger_id="115000001010A")
     # charger = Charger("010400001", "010400001100A", "01")
+
     """초기 충전기 미터값 설정
     """
-
     meterstart = random.randrange(100_000, 120_000)
-    charger.update_var("meterStart", meterstart)
-    charger.update_var("cmeter", charger.local_var["meterStart"])
+    charger.update_var("meterStart",meterstart)
+    charger.update_var("cmeter", meterstart)
     # charger.update_var("cmeter", charger.local_var["meterStop"])
 
-    loop_cnt = 2
+    loop_cnt = 1
     print(f"시나리오: 총 {loop_cnt}회 충전 수행")
 
-    for l in case_run(charger, scenario.heartbeat_after_boot):
-        ws.append(l)
+    # for l in case_run(charger, scenario.heartbeat_after_boot):
+    #     ws.append(l)
 
     for _ in range(loop_cnt):
-        for l in case_run(charger, scenario.normal_case_without_boot):
+        for l in case_run(charger, scenario.normal_case):
             ws.append(l)
 
-    for l in case_run(charger, scenario.error_after_charging):
+    for l in case_run(charger, scenario.normal_case_without_boot):
         ws.append(l)
 
-    # ws.append(case_run(charger, scenario.error_in_charge))
+    # for l in case_run(charger, scenario.error_in_charge):
+    #     ws.append(l)
+
     # ws.append(case_run(charger, scenario.error_just_after_boot))
     # ws.append(case_run(charger, scenario.heartbeat_after_boot))
     # ws.append(case_run(charger, scenario.no_charge_after_authorize))
@@ -539,7 +544,7 @@ def main(charger_id="charger_01"):
 
     """Excel Cell width and style setting
     """
-    cell_width = [15, 20, 25, 15, 15, 15, 15, 15, 10, 10, 40, 40, 40]
+    cell_width = [15, 20, 25, 10, 15, 18, 10, 10, 10, 10, 40, 40, 40]
     for idx, w in enumerate(cell_width):
         ws.column_dimensions[chr(ord("A") + idx)].width = w
     border = Border(bottom=Side(style="thick"))

@@ -17,8 +17,14 @@ urls = {
 }
 headers={
         'Content-type':'application/json', 
-        'Accept':'application/json'
+        'Accept':'application/json',
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
+
 }
+
+
+
 
 api_headers={
         "authorize":

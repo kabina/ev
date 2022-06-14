@@ -77,7 +77,7 @@ error_in_charge = [
     ["meterValues"],
     ["meterValues"],
     ["stopTransaction", "EmergencyStop"],
-    ["boot"]
+    ["bootNotification", "LocalReset"],
 ]
 
 # 부팅 후 heartbeat 진행 중 리부팅 됨(리부팅 후 부팅 안됨)
