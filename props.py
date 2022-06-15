@@ -129,21 +129,21 @@ api_params = { "bootNotification":{
             "reason":"Finished",
             "timestamp":"",
             "transactionId":"",
-            "transactionData":[{
-            "timestamp":"",
-            "sampledValue":[
-                {
-                "measurand":"01",
-                "phase":"01",
-                "unit":"01",
-                "value":"01",
-            },{
-                "measurand":"01",
-                "phase":"01",
-                "unit":"01",
-                "value":"01",
-            }]
-            }]
+            # "transactionData":[{
+            # "timestamp":"",
+            # "sampledValue":[
+            #     {
+            #     "measurand":"01",
+            #     "phase":"01",
+            #     "unit":"01",
+            #     "value":"01",
+            # },{
+            #     "measurand":"01",
+            #     "phase":"01",
+            #     "unit":"01",
+            #     "value":"01",
+            # }]
+            # }]
 
         }, "dataTransferTariff":{
             "venderId":"LG",
@@ -247,7 +247,7 @@ charger_status = [
 
 stop_reason = [
     "Finished", "DeAuthorized", "EmergencyStop", "EVDisconnected", "HardReset",
-    "Local", "Reboot", "Remote", "UnlockCommand"
+    "Local", "Reboot", "Remote", "UnlockCommand", "SoftReset"
 ]
 
 boot_reason = [

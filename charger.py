@@ -29,17 +29,12 @@ from tqdm import tqdm
 
 """랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
 """
-idTags = [
-    "5555222233334444",
-    "3333222233334444",
-    "1111222233334444",
-    "1010202030306060"
-]
+idTags = None
 
 logger = Logger()
 global evlogger
 evlogger = logger.initLogger(loglevel=logging.DEBUG)
-
+conn = None
 
 class Server(metaclass=ABCMeta):
     @abstractmethod
@@ -146,12 +141,12 @@ class Charger(Server):
         self.accessToken = response_dict["payload"]["accessToken"]
 
     def meter_update(self, command=None):
-        self.sampled_value["cimport"] += self.sampled_value["cimport"] + random.uniform(-1, 1)
+        self.sampled_value["cimport"] += random.uniform(-1, 1)
         self.sampled_value["voltage"] = self.sampled_value["voltage"] + random.uniform(-1, 1)
         self.sampled_value["eairegister"] = (self.sampled_value["eairegister"] +
                                              random.randrange(995, 1050)) if command == "meterValues" else 0
         self.sampled_value["soc"] = self.sampled_value["soc"]
-        self.sampled_value["paimport"] += self.sampled_value["paimport"] + random.uniform(-1, 1)
+        self.sampled_value["paimport"] += random.uniform(-1, 1)
 
         self.update_var("cmeter", self.local_var["meterStart"]+self.sampled_value["eairegister"])
 
@@ -481,7 +476,7 @@ def case_run(charger, case) -> list:
             row = charger.make_request(command=task[0])
             out_list.append(row)
 
-        time.sleep(0.1)
+        time.sleep(0.5)
         evlogger.info("=" * 20 + "최종 충전기 내부 변수 상태" + "=" * 18)
         evlogger.info(charger.local_var)
         evlogger.info("=" * 60)
@@ -505,9 +500,9 @@ def main(charger_id="charger_01"):
     """ 9자리 : 충전소 (115000001)
         2자리 : 충전기 (01)
         1자리 : 커넥터 (0)
-        1자리 : 충전타입(급/중/저) (A)
+        1자리 : 충전타입(급/중/저) (A/B/C)
     """
-    charger = Charger(charger_id="115000001010A")
+    charger = Charger(charger_id=crgrList[random.randrange(0,len(crgrList))])
     # charger = Charger("010400001", "010400001100A", "01")
 
     """초기 충전기 미터값 설정
@@ -567,8 +562,79 @@ def getWorkList():
 
     return work_list
 
+def getConnection():
+    import pymysql
+    conn = pymysql.connect(host="rds-aurora-mysql-ev-charger-svc-instance-0.cnjsh2ose5fj.ap-northeast-2.rds.amazonaws.com",
+                           user='evsp_usr', password='evspuser!!', db='evsp', charset='utf8', port=3306)
+
+    return conn
+
+def getCards():
+
+    with conn.cursor() as cur:
+        cur.execute(" select b.mbr_card_no "+
+                    " from mbr_info a "+
+                    " inner join mbr_card_isu_info b "+
+                    " on a.mbr_id = b.mbr_id "+
+                    " where b.card_stus_cd = '01'")
+        return cur.fetchall()
+
+
+def getCrgrs(chrstn_id = None):
+
+    with conn.cursor() as cur:
+        sql = " select b.crgr_cid " \
+              " from crgr_mstr_info a " \
+              " inner join crgr_info b " \
+              " on a.crgr_mid = b.crgr_mid " \
+              " where a.crgr_stus_cd = '04' and b.crgr_cid like '%A'"
+
+        if chrstn_id :
+            sql = sql + f" and a.chrstn_id = '{chrstn_id}' "
+        cur.execute(sql)
+
+        return cur.fetchall()
+
+def getMCrgrs(chrstn_id = None):
+
+    with conn.cursor() as cur:
+        sql = " select crgr_mid " \
+              " from crgr_mstr_info "
+
+        if chrstn_id :
+            sql = sql + f" where chrstn_id = '{chrstn_id}' "
+        cur.execute(sql)
+
+        return cur.fetchall()
+
+def createCrgrMsts(chrstn_id = "115000001"):
+    existCrgrMsts = [crgr[0] for crgr in getMCrgrs(chrstn_id)]
+    print(existCrgrMsts)
+    print(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,100)]) - set(existCrgrMsts))
+    conn = getConnection()
+    with conn.cursor() as cur:
+        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,100)]) - set(existCrgrMsts)):
+            cur.execute(f" insert into crgr_mstr_info(chrstn_id, crgr_mid, crgr_stus_cd, etfn_chrg_crgd_yn) values('{chrstn_id}', '{crgr}', '04', 'Y')")
+
+    conn.commit()
+
+def createCrgrs(chrstn_id = "115000001"):
+
+    with conn.cursor() as cur:
+        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(10,20)])):
+            print(crgr)
+            cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id) values('{crgr}', '{crgr+['0A','0B','0C'][random.randrange(0,3)]}', '{chrstn_id}' )")
+            #pass
+    conn.commit()
+
 if __name__ == "__main__":
+    conn = getConnection()
+    idTags = [card[0] for card in getCards()]
+    crgrList = [crgr[0] for crgr in getCrgrs()]
+
+    # createCrgrs()
     main()
+    # createCrgrs()
     # try :
     #     pool = multiprocessing.Pool(processes=1)  # 3개의 processes 사용
     #     pool.map(main, getWorkList())
