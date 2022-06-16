@@ -522,8 +522,12 @@ def main(charger_id="charger_01"):
         for l in case_run(charger, scenario.normal_case):
             ws.append(l)
 
-    for l in case_run(charger, scenario.normal_case_without_boot):
-        ws.append(l)
+    # for _ in range(loop_cnt):
+    #     for l in case_run(charger, scenario.normal_case):
+    #         ws.append(l)
+
+    # for l in case_run(charger, scenario.normal_case_without_boot):
+    #     ws.append(l)
 
     # for l in case_run(charger, scenario.error_in_charge):
     #     ws.append(l)
@@ -569,6 +573,7 @@ def getConnection():
 
     return conn
 
+
 def getCards():
 
     with conn.cursor() as cur:
@@ -607,34 +612,13 @@ def getMCrgrs(chrstn_id = None):
 
         return cur.fetchall()
 
-def createCrgrMsts(chrstn_id = "115000001"):
-    existCrgrMsts = [crgr[0] for crgr in getMCrgrs(chrstn_id)]
-    print(existCrgrMsts)
-    print(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,100)]) - set(existCrgrMsts))
-    conn = getConnection()
-    with conn.cursor() as cur:
-        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,100)]) - set(existCrgrMsts)):
-            cur.execute(f" insert into crgr_mstr_info(chrstn_id, crgr_mid, crgr_stus_cd, etfn_chrg_crgd_yn) values('{chrstn_id}', '{crgr}', '04', 'Y')")
-
-    conn.commit()
-
-def createCrgrs(chrstn_id = "115000001"):
-
-    with conn.cursor() as cur:
-        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(10,20)])):
-            print(crgr)
-            cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id) values('{crgr}', '{crgr+['0A','0B','0C'][random.randrange(0,3)]}', '{chrstn_id}' )")
-            #pass
-    conn.commit()
-
 if __name__ == "__main__":
     conn = getConnection()
     idTags = [card[0] for card in getCards()]
     crgrList = [crgr[0] for crgr in getCrgrs()]
-
-    # createCrgrs()
+    conn.close()
     main()
-    # createCrgrs()
+
     # try :
     #     pool = multiprocessing.Pool(processes=1)  # 3개의 processes 사용
     #     pool.map(main, getWorkList())

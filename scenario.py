@@ -90,7 +90,8 @@ error_just_after_boot = [
 # 부팅 후 대기 중
 heartbeat_after_boot = [
     ["bootNotification", "LocalReset"],
-    ["dataTransferHeartbeat", None]
+    ["statusNotification", "Available"],
+    ["dataTransferHeartbeat", None],
 ]
 
 # 카드 태깅 후 충전 안하고 가버린 케이스
