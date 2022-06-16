@@ -26,7 +26,7 @@ Todo:
 ## 일반 충전/종료 케이스
 normal_case = [
     ["bootNotification", "PowerUp"],
-    ["statusNotification", "Available"],
+    ["statusNotification", "Available", "NoError", "None"],
     ["authorize"],
     ["statusNotification", "Preparing"],
     ["dataTransferTariff"],
@@ -90,7 +90,7 @@ error_just_after_boot = [
 # 부팅 후 대기 중
 heartbeat_after_boot = [
     ["bootNotification", "LocalReset"],
-    ["statusNotification", "Available"],
+    ["statusNotification", "Available", "NoError", "None"],
     ["dataTransferHeartbeat", None],
 ]
 
