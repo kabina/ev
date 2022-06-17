@@ -105,7 +105,13 @@ def createMember(member = "cust01"):
         cur.execute(f" insert into mbr_info(mbr_id, mbr_stus_cd, mbr_nm, indv_id, lgin_mthd_cd, pswd, hpno, emal_addr, \
         mbr_divs_cd, rep_cars_no, mbsp_grd_cd ) \
         values('{member}', '01', '홍길동', '{member}', '01', 'e52e5b9c1e8c3356d2baa451511131818cbc06e949213b6e4f49cd3589e86712', \
-        '01011223344', 'hong@gmail.com', '01', '서울48로2424', '01' )")
+        '01011223344', 'hong@gmail.com', '01', '서울48로2424', '00' )")
+
+def createMemberEtc(member = "cust01"):
+
+    with conn.cursor() as cur:
+        cur.execute(f" insert into mbr_etc_info(mbr_id, pp_entr_yn, pp_kd_cd, pp_sno) \
+        values('{member}', 'N', '01', 1,)")
 
 def createCards(member = "cust01", card = "0000000000000000", sno=0):
 
@@ -115,6 +121,15 @@ def createCards(member = "cust01", card = "0000000000000000", sno=0):
         values('{member}', '{sno}', '{card}', 'N', '01', \
         '01', 'Y', '홍길동', '12345', '01') ")
 
+def createMbrStlm(member = "cust01"):
+    with conn.cursor() as cur:
+        for j in range(1,2):
+            cur.execute(f" insert into mbr_stlm_card_info(mbr_id, tos_key, brand_pay_yn, card_divs_cd, rep_stlm_card_yn, \
+            stop_yn, poca_asgn_yn ) \
+            values('{member}', 'HWSxOqggbb6Hlrb4GiMx', 'Y', '01', 'Y', \
+            'N', 'Y') ")
+
+
 def createMbrAndCards(start, end):
 
     # 충전소 생성, 충전기 생성(M/C)
@@ -122,7 +137,8 @@ def createMbrAndCards(start, end):
     for i in tqdm(range(start,end)):
         evlogger.info(f"회원 및 회원카드 생성: {i}")
         createMember(f"cust{str(i)}")
-        for j in range(1,4):
+        createMemberEtc(f"cust{str(i)}")
+        for j in range(1,2):
             createCards(member = f"cust{str(i)}", card = random.randrange(1000000000000000,9999999999999999), sno=j)
 
         conn.commit()

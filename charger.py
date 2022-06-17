@@ -613,10 +613,16 @@ def getMCrgrs(chrstn_id = None):
         return cur.fetchall()
 
 if __name__ == "__main__":
-    conn = getConnection()
-    idTags = [card[0] for card in getCards()]
-    crgrList = [crgr[0] for crgr in getCrgrs()]
-    conn.close()
+    DBCONN = False
+
+    if DBCONN :
+        conn = getConnection()
+        idTags = [card[0] for card in getCards()]
+        crgrList = [crgr[0] for crgr in getCrgrs()]
+        conn.close()
+    else:
+        idTags = ['1010202030306060','5555222233334444']
+        crgrList = ['115000001010A']
     main()
 
     # try :
