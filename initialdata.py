@@ -2,6 +2,8 @@ import random
 from tqdm import tqdm
 from evlogger import Logger
 import logging
+import time, json, requests
+from tqdm import tqdm
 
 logger = Logger()
 global evlogger
@@ -16,10 +18,16 @@ def getConnection():
 
 lat_c , lng_c = 37.561253, 126.834329
 
+last_name = ['김','이', '박', '최', '안', '장',  '윤','구','차', '정','주','진', '추','임','강']
+name_first = ['주', '하', '창', '희', '수', '경', '혜', '지', '서', '현', '주', '진', '광', \
+              '천', '선', '경','철', '영', '기', '정', '우', '도', '윤', '강']
+
 def get_lat_lng(lat=37.561253, lng=126.834329):
     radius = random.randrange(1,1000)*0.0001
     return lat+radius, lng+radius
 
+def get_name():
+    return f'{random.choice(last_name)}{"".join(random.sample(name_first, 2))}'
 
 def getCards():
 
@@ -119,7 +127,7 @@ def createCards(member = "cust01", card = "0000000000000000", sno=0):
         cur.execute(f" insert into mbr_card_isu_info(mbr_id, mbr_card_sno, mbr_card_no, grp_card_yn, card_isu_divs_cd, \
         card_stus_cd, aprv_yn_cd, rcip_nm, zpcd, send_stus_cd ) \
         values('{member}', '{sno}', '{card}', 'N', '01', \
-        '01', 'Y', '홍길동', '12345', '01') ")
+        '01', 'Y', '{get_name()}', '12345', '01') ")
 
 def createMbrStlm(member = "cust01"):
     with conn.cursor() as cur:
@@ -128,6 +136,10 @@ def createMbrStlm(member = "cust01"):
             stop_yn, poca_asgn_yn ) \
             values('{member}', 'HWSxOqggbb6Hlrb4GiMx', 'Y', '01', 'Y', \
             'N', 'Y') ")
+
+def getMemberInfo():
+    stlm = {"brand_pay_yn":['Y', 'N'], "rep_stlm_card_yn":['Y', 'N'], "stop_yn":['Y', 'N'], "poca_asgn_yn":['Y','N']}
+    etc = {"pp_entr_yn":['Y','N'], "pp_kd_cd":['01','02'], "pp_sno":1}
 
 
 def createMbrAndCards(start, end):
@@ -139,13 +151,64 @@ def createMbrAndCards(start, end):
         createMember(f"cust{str(i)}")
         createMemberEtc(f"cust{str(i)}")
         for j in range(1,2):
-            createCards(member = f"cust{str(i)}", card = random.randrange(1000000000000000,9999999999999999), sno=j)
+            createCards(member = f"cust{str(i)}", card = f'4{random.randrange(100000000000000,999999999999999)}', sno=j)
 
         conn.commit()
 
-if __name__ == "__main__":
-    conn = getConnection()
+def addr_to_lat_lon(addr):
+    def get_lat_lon(addr):
+        url = 'https://dapi.kakao.com/v2/local/search/address.json?query={address}'.format(address=addr)
+        headers = {"Authorization": "KakaoAK " + "b0435a9866eb210ded83544abae27f26"}
+        result = json.loads(str(requests.get(url, headers=headers).text))
+        return result
+    res = get_lat_lon(addr)
+    if len(res['documents'])==0:
+        res = get_lat_lon(" ".join(addr.split(" ")[:-1]))
 
-    # createRegionChrstns(117, 118)
-    createMbrAndCards(1,100)
-    conn.close()
+    match_first = res['documents'][0]['address']
+    if match_first :
+        return float(match_first['x']), float(match_first['y'])
+    else:
+        return ("","")
+
+
+address = None
+
+def convert_address(filename=None):
+    import pandas as pd
+    csv = pd.read_table(filename, sep="|")
+    # csv = csv[:100]
+    csv.astype(str)
+    address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번'].astype(str)
+    # 위도, 경도 반환하는 함수
+    def geocoding(address):
+
+        return addr_to_lat_lon(address)
+
+
+    #####주소를 위,경도 값으로 변환하기 #####
+    latitude = []
+    longitude =[]
+
+    for i in tqdm(address):
+        geo = geocoding(i)
+        time.sleep(0.001)
+        latitude.append(geo[0])
+        longitude.append(geo[1])
+
+    print(len(address), len(latitude), len(longitude))
+    #####Dataframe만들기######
+    address_df = pd.DataFrame({'우편번호': csv["우편번호"], '주소':address, '법정동코드':csv['법정동코드'], '건물명':csv['시군구용건물명'], '위도':latitude,'경도':longitude})
+
+    #df저장
+    address_df.to_csv('서울특별시_주소_위치.csv', index=False)
+
+
+if __name__ == "__main__":
+
+    convert_address("po/서울특별시.txt")
+    # conn = getConnection()
+    #
+    # # createRegionChrstns(117, 118)
+    # createMbrAndCards(1,100)
+    # conn.close()
