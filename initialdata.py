@@ -272,7 +272,7 @@ def geocoding(param):
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 320_000, 330_000
+    slice_from, slice_to = 400_000, 410_000
     csv = csv[slice_from:slice_to]
 
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
@@ -282,7 +282,7 @@ def convert_address(filename=None):
     lng = manager.list()
 
 
-    with Pool(processes=2) as p:
+    with Pool(processes=4) as p:
         max_ = len(address)
         with tqdm(total=max_) as pbar:
             # for i, _ in enumerate(p.imap_unordered(geocoding, [(lat, lng, i) for i in address])):
