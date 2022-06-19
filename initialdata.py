@@ -1,13 +1,17 @@
+import concurrent.futures
 import random
 from tqdm import tqdm
 from evlogger import Logger
 import logging
 import time, json, requests
 from tqdm import tqdm
+import multiprocessing
+from multiprocessing import Pool
 
 logger = Logger()
 global evlogger
 evlogger = logger.initLogger(loglevel=logging.DEBUG)
+
 conn = None
 
 def getConnection():
@@ -56,18 +60,6 @@ def getCrgrs(chrstn_id = None):
 
         return cur.fetchall()
 
-def getMaxChrstn(region):
-
-    with conn.cursor() as cur:
-        sql = f" select max(chrstn_id) " \
-              " from chrstn_info " \
-              f" where chrstn_id like '{region}%' "
-        cur.execute(sql)
-        if cur.row_count() > 0:
-            return cur.fetchall()[0]
-        else:
-            return 0
-
 def getMCrgrs(chrstn_id = None):
 
     with conn.cursor() as cur:
@@ -97,15 +89,8 @@ def createCrgrs(chrstn_id = "115000001"):
             cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
             values('{crgr}', '{crgr+['0A','0B','0C'][random.randrange(0,3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
 
-def createChrstns(region, count):
-    import fileinput as f
-    ilen = len(region)
-    region_juso = None
-    with open("서울특별시_주소_위치300000-310000.csv", "r", encoding='utf-8') as f:
-        alljuso = [j.split(sep=",") for j in f.readlines() ]
-        region_juso = [j for j in alljuso if j[2][0:ilen]==region]
-    print(len(region_juso))
-    print(random.sample(region_juso, count))
+def createChrstns(region, start, end):
+
     with conn.cursor() as cur:
         for chrstn_id in list(set([region+'{0:06d}'.format(i) for i in range(start,end)])):
             lat, lot = get_lat_lng()
@@ -115,7 +100,6 @@ def createChrstns(region, count):
              '01', '안창선', '01023023866', 'changsan@lgcns.com', '01', '01', {lat}, {lot} )")
 
 def createRegionChrstns(start, end):
-
     # 충전소 생성, 충전기 생성(M/C)
 
     for i in tqdm(range(start,end)):
@@ -177,60 +161,105 @@ def createMbrAndCards(start, end):
 
 def addr_to_lat_lon(addr):
     def get_lat_lon(addr):
-        url = 'https://dapi.kakao.com/v2/local/search/address.json?query={address}'.format(address=addr)
-        headers = {"Authorization": "KakaoAK " + "b0435a9866eb210ded83544abae27f26"}
-        result = json.loads(str(requests.get(url, headers=headers).text))
+        # 카카오
+        # url = 'https://dapi.kakao.com/v2/local/search/address.json?query={address}'.format(address=addr)
+        # headers = {"Authorization": "KakaoAK " + "b0435a9866eb210ded83544abae27f26"}
+        # result = json.loads(str(requests.get(url, headers=headers).text))
+
+        # result = json.load(str(requests.get(url, headers=headers).text))
+        # print(result)
+        # return result
+
+
+        # 네이버
+        #import urllib3 import parser
+        import requests
+        url = f'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode?query={addr}'
+        url_only = 'https://naveropenapi.apigw.ntruss.com/map-geocode/v2/geocode'
+        headers = {'X-NCP-APIGW-API-KEY-ID':'bo9tbmia4k', 'X-NCP-APIGW-API-KEY':'oOGw0S6lI6ktapAFtHIgOFZSTNQ2pLaME1KNPM6g' }
+
+        result = "", ""
+        result_dict = None
+
+        time.sleep(0.001)
+        try :
+            response = requests.get(url, headers=headers)
+        except:
+            from urllib.request import urlopen
+            import urllib.request
+
+            values ={'query':f'{addr}'}
+            data = urllib.parse.urlencode(values).encode('utf-8')
+            req = urllib.request.Request(url_only, data, headers)
+            page = urlopen(req)
+
+            doc = page.read().decode('utf-8')
+            dic = json.loads(doc)
+            result_dict = dic['addresses']
+
+            result = result_dict[0]["x"], result_dict[0]["y"]
+        else:
+            if response.status_code == 200:
+                response = json.loads(response.text)
+                if "addresses" in response :
+                    result_dict = response["addresses"]
+                    if len(result_dict) > 0 :
+                        result = result_dict[0]["x"], result_dict[0]["y"]
         return result
-    res = get_lat_lon(addr)
-    if len(res['documents'])==0:
-        res = get_lat_lon(" ".join(addr.split(" ")[:-1]))
 
-    match_first = res['documents'][0]['address']
-    if match_first :
-        return float(match_first['x']), float(match_first['y'])
-    else:
-        return ("","")
+    return get_lat_lon(addr)
 
+    # kakao
+    # res = get_lat_lon(addr)
+    # print(res)
+    # time.sleep(0.001)
+    # if len(res['documents'])==0:
+    #     res = get_lat_lon(" ".join(addr.split(" ")[:-1]))
+    #
+    # match_first = res['documents'][0]['addreses']
+    #
+    # if match_first :
+    #     return float(match_first['x']), float(match_first['y'])
+    # else:
+    #     return ("","")
 
-address = None
+#  AIzaSyDHfne4oASn_mSo5jLx60HN-3nPNmwYJVs
+
+def geocoding(param):
+    x, y = addr_to_lat_lon(param[2])
+    param[0].append(x)
+    param[1].append(y)
 
 def convert_address(filename=None):
     import pandas as pd
-    csv = pd.read_table(filename, sep="|")
-    start = 340_000
-    end = 360_000
-    csv = csv[start:end]
-    csv.astype(str)
+    csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
+    slice_from, slice_to = 230_000, 240_000
+    csv = csv[slice_from:slice_to]
 
-    address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번'].astype(str)
-    # 위도, 경도 반환하는 함수
-    def geocoding(address):
+    address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
 
-        return addr_to_lat_lon(address)
+    manager = multiprocessing.Manager()
+    lat = manager.list()
+    lng = manager.list()
 
 
-    #####주소를 위,경도 값으로 변환하기 #####
-    latitude = []
-    longitude =[]
+    with Pool(processes=8) as p:
+        max_ = len(address)
+        with tqdm(total=max_) as pbar:
+            # for i, _ in enumerate(p.imap_unordered(geocoding, [(lat, lng, i) for i in address])):
+            for i, _ in enumerate(p.imap(geocoding, [(lat, lng, i) for i in address])):
+                pbar.update()
 
-    for i in tqdm(address):
-        geo = geocoding(i)
-        time.sleep(0.001)
-        latitude.append(geo[0])
-        longitude.append(geo[1])
 
-    print(len(address), len(latitude), len(longitude))
-    #####Dataframe만들기######
-    address_df = pd.DataFrame({'우편번호': csv["우편번호"], '주소':address, '법정동코드':csv['법정동코드'], '건물명':csv['시군구용건물명'], '위도':latitude,'경도':longitude})
+    address_df = pd.DataFrame({'우편번호': csv["우편번호"].astype(str), '주소':address, '법정동코드':csv['법정동코드'],
+                               '건물명':csv['시군구용건물명'], '위도':list(lat), '경도':list(lng)})
 
-    #df저장
-    address_df.to_csv(f'서울특별시_주소_위치{start}-{end}.csv', index=False)
+    address_df.to_csv(f'{filename}_변환완료{slice_from}-{slice_to}.csv', index=False)
 
 
 if __name__ == "__main__":
 
-    # convert_address("po/서울특별시.txt")
-    createChrstns("1165", 10)
+    convert_address("po/서울특별시.txt")
     # conn = getConnection()
     #
     # # createRegionChrstns(117, 118)
