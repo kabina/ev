@@ -8,6 +8,7 @@ from tqdm import tqdm
 logger = Logger()
 global evlogger
 evlogger = logger.initLogger(loglevel=logging.DEBUG)
+conn = None
 
 def getConnection():
     import pymysql
@@ -55,6 +56,18 @@ def getCrgrs(chrstn_id = None):
 
         return cur.fetchall()
 
+def getMaxChrstn(region):
+
+    with conn.cursor() as cur:
+        sql = f" select max(chrstn_id) " \
+              " from chrstn_info " \
+              f" where chrstn_id like '{region}%' "
+        cur.execute(sql)
+        if cur.row_count() > 0:
+            return cur.fetchall()[0]
+        else:
+            return 0
+
 def getMCrgrs(chrstn_id = None):
 
     with conn.cursor() as cur:
@@ -84,8 +97,15 @@ def createCrgrs(chrstn_id = "115000001"):
             cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
             values('{crgr}', '{crgr+['0A','0B','0C'][random.randrange(0,3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
 
-def createChrstns(region, start, end):
-
+def createChrstns(region, count):
+    import fileinput as f
+    ilen = len(region)
+    region_juso = None
+    with open("서울특별시_주소_위치300000-310000.csv", "r", encoding='utf-8') as f:
+        alljuso = [j.split(sep=",") for j in f.readlines() ]
+        region_juso = [j for j in alljuso if j[2][0:ilen]==region]
+    print(len(region_juso))
+    print(random.sample(region_juso, count))
     with conn.cursor() as cur:
         for chrstn_id in list(set([region+'{0:06d}'.format(i) for i in range(start,end)])):
             lat, lot = get_lat_lng()
@@ -177,8 +197,11 @@ address = None
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|")
-    # csv = csv[:100]
+    start = 340_000
+    end = 360_000
+    csv = csv[start:end]
     csv.astype(str)
+
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번'].astype(str)
     # 위도, 경도 반환하는 함수
     def geocoding(address):
@@ -201,12 +224,13 @@ def convert_address(filename=None):
     address_df = pd.DataFrame({'우편번호': csv["우편번호"], '주소':address, '법정동코드':csv['법정동코드'], '건물명':csv['시군구용건물명'], '위도':latitude,'경도':longitude})
 
     #df저장
-    address_df.to_csv('서울특별시_주소_위치.csv', index=False)
+    address_df.to_csv(f'서울특별시_주소_위치{start}-{end}.csv', index=False)
 
 
 if __name__ == "__main__":
 
-    convert_address("po/서울특별시.txt")
+    # convert_address("po/서울특별시.txt")
+    createChrstns("1165", 10)
     # conn = getConnection()
     #
     # # createRegionChrstns(117, 118)
