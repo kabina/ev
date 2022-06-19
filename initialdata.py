@@ -1,6 +1,7 @@
 import concurrent.futures
 import random
-from tqdm import tqdm
+import string
+
 from evlogger import Logger
 import logging
 import time, json, requests
@@ -97,28 +98,43 @@ def getMaxChrstn(region):
               f" where chrstn_id like '{region}%' "
         cur.execute(sql)
         if cur.row_count() > 0:
-            return cur.fetchall()[0]
+            return int(cur.fetchall()[0])
         else:
             return 0
 
+def get_tel_no():
+    return f"010{random.randrange(10000000, 99999999)}"
+
+def get_email():
+    return f"{random.choices(string.ascii_lowercase, 8)}"
+
 def createChrstns(region, count):
 
-    import fileinput as f
     ilen = len(region)
+
+    max_seq = 0 ## 수정해야 함
     region_juso = None
     with open("서울특별시_주소_위치300000-310000.csv", "r", encoding='utf-8') as f:
         alljuso = [j.split(sep=",") for j in f.readlines() ]
         region_juso = [j for j in alljuso if j[2][0:ilen]==region]
-    print(len(region_juso))
-    print(random.sample(region_juso, count))
-
+    """region_juso 요소
+        [0] 우편번호
+        [1] 주소명(Fullname)
+        [2] 법정동코드
+        [3] 건물명
+        [4] 위도
+        [5] 경도
+    """
+    chrs = random.sample(region_juso, count)
     with conn.cursor() as cur:
-        for chrstn_id in list(set([region+'{0:06d}'.format(i) for i in range(start,end)])):
+        for chr in chrs:
             lat, lot = get_lat_lng()
+            max_seq += 1
+            chrstn = f'{chr[2][0:5]}{max_seq:04}'
             cur.execute(f" insert into chrstn_info(chrstn_id, me_chrstn_id, chrstn_nm, chrstn_oprn_stus_cd, \
             chrstn_rcpt_path_cd, aplc_nm, aplc_hpno, aplc_emal_addr, cust_kd_cd, cust_detl_kd_cd, lat, lot) \
-            values('{chrstn_id}', '{chrstn_id[3:]}', '충전소_{chrstn_id}', '{['04','05'][random.randrange(0,2)]}',\
-             '01', '안창선', '01023023866', 'changsan@lgcns.com', '01', '01', {lat}, {lot} )")
+            values('{chrstn}', '{chrstn[3:]}', 'U+{chrs[3]}충전소', '{['04','05'][random.randrange(0,2)]}',\
+             '01', '{get_name()}', '010{get_tel_no()}', '{get_email()}', '01', '01', {lat}, {lot} )")
 
 def createRegionChrstns(start, end):
     # 충전소 생성, 충전기 생성(M/C)
@@ -173,10 +189,12 @@ def createMbrAndCards(start, end):
 
     for i in tqdm(range(start,end)):
         evlogger.info(f"회원 및 회원카드 생성: {i}")
-        createMember(f"cust{str(i)}")
-        createMemberEtc(f"cust{str(i)}")
+        member_id = f"cust01{str(i)}"
+        createMember(member= member_id)
+        createMemberEtc(member= member_id)
+        createMbrStlm(member=member_id)
         for j in range(1,2):
-            createCards(member = f"cust{str(i)}", card = f'4{random.randrange(100000000000000,999999999999999)}', sno=j)
+            createCards(member = member_id, card = f'4{random.randrange(100000000000000,999999999999999)}', sno=j)
 
         conn.commit()
 
@@ -254,7 +272,7 @@ def geocoding(param):
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 230_000, 240_000
+    slice_from, slice_to = 290_000, 300_000
     csv = csv[slice_from:slice_to]
 
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
@@ -264,7 +282,7 @@ def convert_address(filename=None):
     lng = manager.list()
 
 
-    with Pool(processes=8) as p:
+    with Pool(processes=4) as p:
         max_ = len(address)
         with tqdm(total=max_) as pbar:
             # for i, _ in enumerate(p.imap_unordered(geocoding, [(lat, lng, i) for i in address])):
@@ -281,6 +299,7 @@ def convert_address(filename=None):
 if __name__ == "__main__":
 
     convert_address("po/서울특별시.txt")
+    # createChrstns("1165", 2)
     # conn = getConnection()
     #
     # # createRegionChrstns(117, 118)
