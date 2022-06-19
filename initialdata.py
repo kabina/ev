@@ -114,7 +114,7 @@ def get_email():
 
 def createChrstns(region, count):
 
-    max_seq = getMaxChrstn(region) ## 수정해야 함(지역별 최대 충전소 시퀀스)
+    max_seq = 0 #getMaxChrstn(region) ## 수정해야 함(지역별 최대 충전소 시퀀스)
     region_juso = [j for j in alljuso if j[2].startswith(region)]
     """region_juso 요소
         [0] 우편번호
@@ -298,8 +298,8 @@ def convert_address(filename=None):
 
 if __name__ == "__main__":
 
-    convert_address("po/서울특별시.txt")
-    # createChrstns("1165", 100)
+    # convert_address("po/서울특별시.txt")
+    createChrstns("1165", 100)
     # conn = getConnection()
     #
     # # createRegionChrstns(117, 118)
