@@ -26,7 +26,11 @@ lat_c , lng_c = 37.561253, 126.834329
 
 last_name = ['김','이', '박', '최', '안', '장', '윤','구','차', '정','주','진', '추','임','강']
 name_first = ['주', '하', '창', '희', '수', '경', '혜', '지', '서', '현', '주', '진', '광', \
-              '천', '선', '경','철', '영', '기', '정', '우', '도', '윤', '강', '성']
+              '천', '선', '경','철', '영', '기', '정', '우', '도', '윤', '강', '성', '중', '나', '용','이']
+
+alljuso = None
+with open("서울특별시_변환완료.csv", "r", encoding='utf-8') as f:
+    alljuso = [j.strip().split(sep=",") for j in f.readlines()]
 
 def get_lat_lng(lat=37.561253, lng=126.834329):
     radius = random.randrange(1,1000)*0.0001
@@ -110,13 +114,8 @@ def get_email():
 
 def createChrstns(region, count):
 
-    ilen = len(region)
-
-    max_seq = 0 ## 수정해야 함
-    region_juso = None
-    with open("서울특별시_주소_위치300000-310000.csv", "r", encoding='utf-8') as f:
-        alljuso = [j.split(sep=",") for j in f.readlines() ]
-        region_juso = [j for j in alljuso if j[2][0:ilen]==region]
+    max_seq = getMaxChrstn(region) ## 수정해야 함(지역별 최대 충전소 시퀀스)
+    region_juso = [j for j in alljuso if j[2].startswith(region)]
     """region_juso 요소
         [0] 우편번호
         [1] 주소명(Fullname)
@@ -126,9 +125,11 @@ def createChrstns(region, count):
         [5] 경도
     """
     chrs = random.sample(region_juso, count)
+
+    print(chrs[:100])
     with conn.cursor() as cur:
         for chr in chrs:
-            lat, lot = get_lat_lng()
+            lat, lot = chr[4], chr[5]
             max_seq += 1
             chrstn = f'{chr[2][0:5]}{max_seq:04}'
             cur.execute(f" insert into chrstn_info(chrstn_id, me_chrstn_id, chrstn_nm, chrstn_oprn_stus_cd, \
@@ -281,8 +282,7 @@ def convert_address(filename=None):
     lat = manager.list()
     lng = manager.list()
 
-
-    with Pool(processes=4) as p:
+    with Pool(processes=2) as p:
         max_ = len(address)
         with tqdm(total=max_) as pbar:
             # for i, _ in enumerate(p.imap_unordered(geocoding, [(lat, lng, i) for i in address])):
@@ -299,7 +299,7 @@ def convert_address(filename=None):
 if __name__ == "__main__":
 
     convert_address("po/서울특별시.txt")
-    # createChrstns("1165", 2)
+    # createChrstns("1165", 100)
     # conn = getConnection()
     #
     # # createRegionChrstns(117, 118)
