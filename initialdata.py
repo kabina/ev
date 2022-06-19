@@ -89,7 +89,28 @@ def createCrgrs(chrstn_id = "115000001"):
             cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
             values('{crgr}', '{crgr+['0A','0B','0C'][random.randrange(0,3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
 
-def createChrstns(region, start, end):
+def getMaxChrstn(region):
+
+    with conn.cursor() as cur:
+        sql = f" select max(chrstn_id) " \
+              " from chrstn_info " \
+              f" where chrstn_id like '{region}%' "
+        cur.execute(sql)
+        if cur.row_count() > 0:
+            return cur.fetchall()[0]
+        else:
+            return 0
+
+def createChrstns(region, count):
+
+    import fileinput as f
+    ilen = len(region)
+    region_juso = None
+    with open("서울특별시_주소_위치300000-310000.csv", "r", encoding='utf-8') as f:
+        alljuso = [j.split(sep=",") for j in f.readlines() ]
+        region_juso = [j for j in alljuso if j[2][0:ilen]==region]
+    print(len(region_juso))
+    print(random.sample(region_juso, count))
 
     with conn.cursor() as cur:
         for chrstn_id in list(set([region+'{0:06d}'.format(i) for i in range(start,end)])):
