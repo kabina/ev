@@ -24,9 +24,9 @@ def getConnection():
 
 lat_c , lng_c = 37.561253, 126.834329
 
-last_name = ['김','이', '박', '최', '안', '장',  '윤','구','차', '정','주','진', '추','임','강']
+last_name = ['김','이', '박', '최', '안', '장', '윤','구','차', '정','주','진', '추','임','강']
 name_first = ['주', '하', '창', '희', '수', '경', '혜', '지', '서', '현', '주', '진', '광', \
-              '천', '선', '경','철', '영', '기', '정', '우', '도', '윤', '강']
+              '천', '선', '경','철', '영', '기', '정', '우', '도', '윤', '강', '성']
 
 def get_lat_lng(lat=37.561253, lng=126.834329):
     radius = random.randrange(1,1000)*0.0001
@@ -272,7 +272,7 @@ def geocoding(param):
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 290_000, 300_000
+    slice_from, slice_to = 320_000, 330_000
     csv = csv[slice_from:slice_to]
 
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
@@ -282,7 +282,7 @@ def convert_address(filename=None):
     lng = manager.list()
 
 
-    with Pool(processes=4) as p:
+    with Pool(processes=2) as p:
         max_ = len(address)
         with tqdm(total=max_) as pbar:
             # for i, _ in enumerate(p.imap_unordered(geocoding, [(lat, lng, i) for i in address])):
