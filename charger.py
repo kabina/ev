@@ -471,6 +471,7 @@ def case_run(charger, case) -> list:
         if task[0] == "meterValues":
             for _ in range(random.randrange(1,10)):
                 row = charger.make_request(command=task[0])
+                time.sleep(0.5)
                 out_list.append(row)
         else:
             row = charger.make_request(command=task[0])
@@ -613,7 +614,7 @@ def getMCrgrs(chrstn_id = None):
         return cur.fetchall()
 
 if __name__ == "__main__":
-    DBCONN = False
+    DBCONN = True
 
     if DBCONN :
         conn = getConnection()
@@ -623,6 +624,7 @@ if __name__ == "__main__":
     else:
         idTags = ['1010202030306060','5555222233334444']
         crgrList = ['115000001010A']
+
     main()
 
     # try :

@@ -78,22 +78,18 @@ def getMCrgrs(chrstn_id = None):
 
         return cur.fetchall()
 
-def createCrgrMsts(chrstn_id = "115000001"):
+
+
+def createCrgrMsts(chrstn_id = "115000001", crgr_count=1):
     existCrgrMsts = [crgr[0] for crgr in getMCrgrs(chrstn_id)]
     # print(existCrgrMsts)
     # print(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,100)]) - set(existCrgrMsts))
 
     with conn.cursor() as cur:
-        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,100)]) - set(existCrgrMsts)):
+        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)]) - set(existCrgrMsts)):
             cur.execute(f" insert into crgr_mstr_info(chrstn_id, crgr_mid, crgr_stus_cd, etfn_chrg_crgd_yn) \
             values('{chrstn_id}', '{crgr}', '04', 'Y')")
 
-def createCrgrs(chrstn_id = "115000001"):
-
-    with conn.cursor() as cur:
-        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,100)])):
-            cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
-            values('{crgr}', '{crgr+['0A','0B','0C'][random.randrange(0,3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
 
 def getMaxChrstn(region):
 
@@ -102,20 +98,23 @@ def getMaxChrstn(region):
               " from chrstn_info " \
               f" where chrstn_id like '{region}%' "
         cur.execute(sql)
-        if cur.row_count() > 0:
-            return int(cur.fetchall()[0])
-        else:
+
+        result = cur.fetchone()
+
+        if result[0] == None:
             return 0
+        else:
+            return int(result[0])
 
 def get_tel_no():
-    return f"010{random.randrange(10000000, 99999999)}"
+    return f"{random.randrange(10000000, 99999999)}"
 
 def get_email():
-    return f"{random.choices(string.ascii_lowercase, 8)}"
+    return "".join(random.choices(string.ascii_lowercase, k=8))+"@gmail.com"
 
-def createChrstns(region, count):
+def createChrstns(region, chrstn_count=0, crgr_count=0):
 
-    max_seq = 0 #getMaxChrstn(region) ## 수정해야 함(지역별 최대 충전소 시퀀스)
+    max_seq = getMaxChrstn(region) ## 수정해야 함(지역별 최대 충전소 시퀀스)
     region_juso = [j for j in alljuso if j[2].startswith(region)]
     """region_juso 요소
         [0] 우편번호
@@ -125,18 +124,33 @@ def createChrstns(region, count):
         [4] 위도
         [5] 경도
     """
-    chrs = random.sample(region_juso, count)
+    chrs = random.sample(region_juso, chrstn_count)
 
-    print(chrs[:100])
     with conn.cursor() as cur:
         for chr in chrs:
             lat, lot = chr[4], chr[5]
             max_seq += 1
             chrstn = f'{chr[2][0:5]}{max_seq:04}'
-            cur.execute(f" insert into chrstn_info(chrstn_id, me_chrstn_id, chrstn_nm, chrstn_oprn_stus_cd, \
+            juso = chr[1].split()
+
+            sql = f" insert into chrstn_info(chrstn_id, me_chrstn_id, chrstn_nm, chrstn_oprn_stus_cd, \
+            cust_nm, area_ctdo, area_ccw, zpcd, badr, dadr, \
             chrstn_rcpt_path_cd, aplc_nm, aplc_hpno, aplc_emal_addr, cust_kd_cd, cust_detl_kd_cd, lat, lot) \
-            values('{chrstn}', '{chrstn[3:]}', 'U+{chrs[3]}충전소', '{['04','05'][random.randrange(0,2)]}',\
-             '01', '{get_name()}', '010{get_tel_no()}', '{get_email()}', '01', '01', {lat}, {lot} )")
+            values('{chrstn}', '{chrstn[4:]:06}', 'U+{chr[3]}충전소', '{['04','05'][random.randrange(0,2)]}',\
+            '{get_name()}', '{juso[0]}', '{juso[1]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
+             '01', '{get_name()}', '010{get_tel_no()}', '{get_email()}', '01', '01', '{lat}', '{lot}' )"
+            #print(sql)
+            cur.execute(sql)
+            createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count)
+            createCrgrs(chrstn_id = chrstn, crgr_count=crgr_count)
+        conn.commit()
+
+def createCrgrs(chrstn_id = "115000001", crgr_count=0):
+
+    with conn.cursor() as cur:
+        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)])):
+            cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
+            values('{crgr}', '{crgr+['0A','0B','0C'][random.randrange(0,3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
 
 def createRegionChrstns(start, end):
     # 충전소 생성, 충전기 생성(M/C)
@@ -153,32 +167,40 @@ def createRegionChrstns(start, end):
 def createMember(member = "cust01"):
 
     with conn.cursor() as cur:
-        cur.execute(f" insert into mbr_info(mbr_id, mbr_stus_cd, mbr_nm, indv_id, lgin_mthd_cd, pswd, hpno, emal_addr, \
-        mbr_divs_cd, rep_cars_no, mbsp_grd_cd ) \
-        values('{member}', '01', '홍길동', '{member}', '01', 'e52e5b9c1e8c3356d2baa451511131818cbc06e949213b6e4f49cd3589e86712', \
-        '01011223344', 'hong@gmail.com', '01', '서울48로2424', '00' )")
+        juso = [random.choice(alljuso)][0]
+        print(juso)
+        juso_adr = juso[1].split()
+        cur.execute(f" insert into mbr_info(mbr_id, mbr_stus_cd, mbr_nm, indv_id, lgin_mthd_cd, pswd, emal_addr, \
+        mbr_divs_cd, rep_cars_no, mbsp_grd_cd ,zpcd, badr, dadr, hpno, area_ctdo, area_ccw ) \
+        values('{member}', '01', '{get_name()}', '{member}', '01', 'e52e5b9c1e8c3356d2baa451511131818cbc06e949213b6e4f49cd3589e86712', \
+        '{get_email()}', '01', '서울48로2424', '00', '{juso[0]}', '{juso[1]}', \
+        '{juso[1]}', '010{get_tel_no()}', '{juso_adr[0]}', '{juso_adr[1]}')")
+
+
 
 def createMemberEtc(member = "cust01"):
 
     with conn.cursor() as cur:
-        cur.execute(f" insert into mbr_etc_info(mbr_id, pp_entr_yn, pp_kd_cd, pp_sno) \
-        values('{member}', 'N', '01', 1,)")
+        cur.execute(f" insert into mbr_etc_info(mbr_id, stlm_mthd_cd, tos_blng_key, pp_entr_yn, pp_kd_cd, pp_uuid, pp_sno, pp_divs_cd, \
+        chrg_aply_divs_cd, aply_chrg_base_cd, sscb_chrg_exmt_yn ) \
+        values('{member}', '01', 'TOSS_BLING_KEY', 'N', '01', 1, 1, '01', '01', '01', 'Y')")
 
 def createCards(member = "cust01", card = "0000000000000000", sno=0):
 
     with conn.cursor() as cur:
+
         cur.execute(f" insert into mbr_card_isu_info(mbr_id, mbr_card_sno, mbr_card_no, grp_card_yn, card_isu_divs_cd, \
-        card_stus_cd, aprv_yn_cd, rcip_nm, zpcd, send_stus_cd ) \
+        card_stus_cd, aprv_yn_cd, rcip_nm,  send_stus_cd ) \
         values('{member}', '{sno}', '{card}', 'N', '01', \
-        '01', 'Y', '{get_name()}', '12345', '01') ")
+        '01', 'Y', '{get_name()}',  '01') ")
 
 def createMbrStlm(member = "cust01"):
     with conn.cursor() as cur:
         for j in range(1,2):
-            cur.execute(f" insert into mbr_stlm_card_info(mbr_id, tos_key, brand_pay_yn, card_divs_cd, rep_stlm_card_yn, \
-            stop_yn, poca_asgn_yn ) \
+            cur.execute(f" insert into mbr_stlm_card_info(mbr_id, tos_key, brnd_pay_yn, card_divs_cd, rep_stlm_card_yn, \
+            ccrd_cmpy_nm, cdco_cd, card_no, card_nm, card_id, card_kd, ownr_kd, stop_yn, poca_asgn_yn ) \
             values('{member}', 'HWSxOqggbb6Hlrb4GiMx', 'Y', '01', 'Y', \
-            'N', 'Y') ")
+            '롯데', '51', '513223******4432', '롯데카드', 'c_213123j3jk23jk2k', '신용', '개인', 'N', 'Y') ")
 
 def getMemberInfo():
     stlm = {"brand_pay_yn":['Y', 'N'], "rep_stlm_card_yn":['Y', 'N'], "stop_yn":['Y', 'N'], "poca_asgn_yn":['Y','N']}
@@ -191,7 +213,7 @@ def createMbrAndCards(start, end):
 
     for i in tqdm(range(start,end)):
         evlogger.info(f"회원 및 회원카드 생성: {i}")
-        member_id = f"cust01{str(i)}"
+        member_id = f"cust{i:04}"
         createMember(member= member_id)
         createMemberEtc(member= member_id)
         createMbrStlm(member=member_id)
@@ -299,10 +321,11 @@ def convert_address(filename=None):
 
 if __name__ == "__main__":
 
+    conn = getConnection()
     # convert_address("po/서울특별시.txt")
-    createChrstns("1165", 100)
-    # conn = getConnection()
+    #createChrstns("114", chrstn_count=1000, crgr_count=50)
+
     #
     # # createRegionChrstns(117, 118)
-    # createMbrAndCards(1,100)
-    # conn.close()
+    createMbrAndCards(1,100)
+    conn.close()
