@@ -33,7 +33,7 @@ idTags = None
 
 logger = Logger()
 global evlogger
-evlogger = logger.initLogger(loglevel=logging.DEBUG)
+evlogger = logger.initLogger(loglevel=logging.FATAL)
 conn = None
 
 class Server(metaclass=ABCMeta):
@@ -618,8 +618,8 @@ if __name__ == "__main__":
 
     if DBCONN :
         conn = getConnection()
-        idTags = [card[0] for card in getCards()]
-        crgrList = [crgr[0] for crgr in getCrgrs()]
+        idTags = random.sample([card[0] for card in getCards()], k=100)
+        crgrList = random.sample([crgr[0] for crgr in getCrgrs()], k=100)
         conn.close()
     else:
         idTags = ['1010202030306060','5555222233334444']

@@ -220,10 +220,11 @@ api_response = {
         },
     },
     "dataTransferHeartbeat":{
-        "status":["M", None],
-        "data":{
-            "currentTime":["M", None]
-        }
+        "currentTime":["M", None]
+        # "status":["M", None],
+        # "data":{
+        #     "currentTime":["M", None]
+        # }
     },
     "statusNotification":{
 

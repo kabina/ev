@@ -106,11 +106,28 @@ def getMaxChrstn(region):
         else:
             return int(result[0])
 
+def get_eng_names():
+    from urllib.request import Request, urlopen
+    import random
+
+
+    url="https://svnweb.freebsd.org/csrg/share/dict/words?revision=61569&view=co"
+    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+
+    web_byte = urlopen(req).read()
+
+    webpage = web_byte.decode('utf-8')
+    first500 = webpage[:1000].split("\n")
+    random.shuffle(first500)
+    return first500
+
+eng_names = get_eng_names()
+
 def get_tel_no():
     return f"{random.randrange(10000000, 99999999)}"
 
 def get_email():
-    return "".join(random.choices(string.ascii_lowercase, k=8))+"@gmail.com"
+    return random.choice(eng_names)+"@gmail.com"
 
 def createChrstns(region, chrstn_count=0, crgr_count=0):
 
@@ -138,7 +155,7 @@ def createChrstns(region, chrstn_count=0, crgr_count=0):
             chrstn_rcpt_path_cd, aplc_nm, aplc_hpno, aplc_emal_addr, cust_kd_cd, cust_detl_kd_cd, lat, lot) \
             values('{chrstn}', '{chrstn[4:]:06}', 'U+{chr[3]}충전소', '{['04','05'][random.randrange(0,2)]}',\
             '{get_name()}', '{juso[0]}', '{juso[1]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
-             '01', '{get_name()}', '010{get_tel_no()}', '{get_email()}', '01', '01', '{lat}', '{lot}' )"
+             '01', '{get_name()}', '010{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}' )"
             #print(sql)
             cur.execute(sql)
             createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count)
@@ -323,9 +340,9 @@ if __name__ == "__main__":
 
     conn = getConnection()
     # convert_address("po/서울특별시.txt")
-    #createChrstns("114", chrstn_count=1000, crgr_count=50)
+    createChrstns("114", chrstn_count=1000, crgr_count=50)
 
     #
     # # createRegionChrstns(117, 118)
-    createMbrAndCards(1,100)
+    # createMbrAndCards(1,100)
     conn.close()
