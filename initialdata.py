@@ -189,7 +189,8 @@ def createMember(member = "cust01"):
         juso_adr = juso[1].split()
         cur.execute(f" insert into mbr_info(mbr_id, mbr_stus_cd, mbr_nm, indv_id, lgin_mthd_cd, pswd, emal_addr, \
         mbr_divs_cd, rep_cars_no, mbsp_grd_cd ,zpcd, badr, dadr, hpno, area_ctdo, area_ccw ) \
-        values('{member}', '01', '{get_name()}', '{member}', '01', 'e52e5b9c1e8c3356d2baa451511131818cbc06e949213b6e4f49cd3589e86712', \
+        values('{member}', '01', '{get_name()}', '{member}', '01', \
+        'e52e5b9c1e8c3356d2baa451511131818cbc06e949213b6e4f49cd3589e86712', \
         '{get_email()}', '01', '서울48로2424', '00', '{juso[0]}', '{juso[1]}', \
         '{juso[1]}', '010{get_tel_no()}', '{juso_adr[0]}', '{juso_adr[1]}')")
 
@@ -198,8 +199,8 @@ def createMember(member = "cust01"):
 def createMemberEtc(member = "cust01"):
 
     with conn.cursor() as cur:
-        cur.execute(f" insert into mbr_etc_info(mbr_id, stlm_mthd_cd, tos_blng_key, pp_entr_yn, pp_kd_cd, pp_uuid, pp_sno, pp_divs_cd, \
-        chrg_aply_divs_cd, aply_chrg_base_cd, sscb_chrg_exmt_yn ) \
+        cur.execute(f" insert into mbr_etc_info(mbr_id, stlm_mthd_cd, tos_blng_key, pp_entr_yn, pp_kd_cd, pp_uuid, \
+        pp_sno, pp_divs_cd, chrg_aply_divs_cd, aply_chrg_base_cd, sscb_chrg_exmt_yn ) \
         values('{member}', '01', 'TOSS_BLING_KEY', 'N', '01', 1, 1, '01', '01', '01', 'Y')")
 
 def createCards(member = "cust01", card = "0000000000000000", sno=0):
