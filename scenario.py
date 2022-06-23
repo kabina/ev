@@ -44,6 +44,27 @@ normal_case = [
     ["dataTransferHeartbeat", None],
     ["dataTransferHeartbeat", None],
 ]
+normal_case_reserved = [
+    ["bootNotification", "PowerUp"],
+    ["statusNotification", "Reserved", "NoError", "None"],
+    ["authorize"],
+    # ["statusNotification", "Preparing"],
+    # ["dataTransferTariff"],
+    # ["startTransaction"],
+    # ["statusNotification", "Charging"],
+    # ["meterValues"],
+    # ["meterValues"],
+    # ["meterValues"],
+    # ["meterValues"],
+    # ["meterValues"],
+    # ["stopTransaction", "Finished"],
+    # ["statusNotification", "Finishing"],
+    # ["statusNotification", "Available"],
+    # ["dataTransferHeartbeat", None],
+    # ["dataTransferHeartbeat", None],
+    # ["dataTransferHeartbeat", None],
+]
+
 normal_case_without_boot = [
     ["statusNotification", "Available"],
     ["authorize"],
@@ -128,4 +149,10 @@ remote_stop_transaction = [
     ["dataTransferHeartbeat"],
     ["dataTransferHeartbeat"],
     ["dataTransferHeartbeat"],
+]
+
+roaming_card_error = [
+    ["bootNotification", "PowerUp"],
+    ["statusNotification", "Available"],
+    ["authorize"],
 ]

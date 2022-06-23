@@ -4,7 +4,7 @@ import string
 
 from evlogger import Logger
 import logging
-import time, json, requests
+import time, json, requests, datetime
 from tqdm import tqdm
 import multiprocessing
 from multiprocessing import Pool
@@ -39,6 +39,9 @@ def get_lat_lng(lat=37.561253, lng=126.834329):
 
 def get_name():
     return f'{random.choice(last_name)}{"".join(random.sample(name_first, 2))}'
+
+def get_car_no():
+    return f"{random.randrange(111,999)}{random.choice(['가','나','다','라,','마','수'])}{random.randrange(1111,9999)}"
 
 def getCards():
 
@@ -87,8 +90,8 @@ def createCrgrMsts(chrstn_id = "115000001", crgr_count=1):
 
     with conn.cursor() as cur:
         for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)]) - set(existCrgrMsts)):
-            cur.execute(f" insert into crgr_mstr_info(chrstn_id, crgr_mid, crgr_stus_cd, etfn_chrg_crgd_yn) \
-            values('{chrstn_id}', '{crgr}', '04', 'Y')")
+            cur.execute(f" insert into crgr_mstr_info(chrstn_id, crgr_mid, crgr_stus_cd, etfn_chrg_crgd_yn, estb_year, estb_mm) \
+            values('{chrstn_id}', '{crgr}', '04', 'Y', '2022', '06')")
 
 
 def getMaxChrstn(region):
@@ -124,14 +127,14 @@ def get_eng_names():
 eng_names = get_eng_names()
 
 def get_tel_no():
-    return f"{random.randrange(10000000, 99999999)}"
+    return f"010{random.randrange(10000000, 99999999)}"
 
 def get_email():
     return random.choice(eng_names)+"@gmail.com"
 
 def createChrstns(region, chrstn_count=0, crgr_count=0):
 
-    max_seq = getMaxChrstn(region) ## 수정해야 함(지역별 최대 충전소 시퀀스)
+    max_seq = getMaxChrstn(region)%10000 ## 수정해야 함(지역별 최대 충전소 시퀀스)
     region_juso = [j for j in alljuso if j[2].startswith(region)]
     """region_juso 요소
         [0] 우편번호
@@ -144,7 +147,7 @@ def createChrstns(region, chrstn_count=0, crgr_count=0):
     chrs = random.sample(region_juso, chrstn_count)
 
     with conn.cursor() as cur:
-        for chr in chrs:
+        for chr in tqdm(chrs):
             lat, lot = chr[4], chr[5]
             max_seq += 1
             chrstn = f'{chr[2][0:5]}{max_seq:04}'
@@ -155,7 +158,7 @@ def createChrstns(region, chrstn_count=0, crgr_count=0):
             chrstn_rcpt_path_cd, aplc_nm, aplc_hpno, aplc_emal_addr, cust_kd_cd, cust_detl_kd_cd, lat, lot) \
             values('{chrstn}', '{chrstn[4:]:06}', 'U+{chr[3]}충전소', '{['04','05'][random.randrange(0,2)]}',\
             '{get_name()}', '{juso[0]}', '{juso[1]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
-             '01', '{get_name()}', '010{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}' )"
+             '01', '{get_name()}', '{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}' )"
             #print(sql)
             cur.execute(sql)
             createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count)
@@ -185,14 +188,13 @@ def createMember(member = "cust01"):
 
     with conn.cursor() as cur:
         juso = [random.choice(alljuso)][0]
-        print(juso)
         juso_adr = juso[1].split()
         cur.execute(f" insert into mbr_info(mbr_id, mbr_stus_cd, mbr_nm, indv_id, lgin_mthd_cd, pswd, emal_addr, \
-        mbr_divs_cd, rep_cars_no, mbsp_grd_cd ,zpcd, badr, dadr, hpno, area_ctdo, area_ccw ) \
+        mbr_divs_cd, rep_cars_no, mbsp_grd_cd ,zpcd, badr, dadr, hpno, area_ctdo, area_ccw, reg_dttm ) \
         values('{member}', '01', '{get_name()}', '{member}', '01', \
         'e52e5b9c1e8c3356d2baa451511131818cbc06e949213b6e4f49cd3589e86712', \
-        '{get_email()}', '01', '서울48로2424', '00', '{juso[0]}', '{juso[1]}', \
-        '{juso[1]}', '010{get_tel_no()}', '{juso_adr[0]}', '{juso_adr[1]}')")
+        '{get_email()}', '01', '{get_car_no()}', '00', '{juso[0]}', '{juso[1]}', \
+        '{juso[1]}', '{get_tel_no()}', '{juso_adr[0]}', '{juso_adr[1]}', '{datetime.datetime.now()}')")
 
 
 
@@ -341,9 +343,9 @@ if __name__ == "__main__":
 
     conn = getConnection()
     # convert_address("po/서울특별시.txt")
-    createChrstns("114", chrstn_count=1000, crgr_count=50)
+    # createChrstns("11500", chrstn_count=400, crgr_count=50)
 
     #
     # # createRegionChrstns(117, 118)
-    # createMbrAndCards(1,100)
+    createMbrAndCards(200,201)
     conn.close()

@@ -4,17 +4,17 @@ chost = "https://devevspcharger.uplus.co.kr"
 # chost = "http://localhost:5000"
 
 urls = {
-    "login": host+"/adm/cmm-api/v1/AUTH/login",
     "authorize":chost+"/api/v1/OCPP/authorize/999332",
     "bootNotification":chost+"/api/v1/OCPP/bootNotification/999332",
     "dataTransferHeartbeat":chost+"/api/v1/OCPP/dataTransfer/999332",
     "prepare":chost+"/api/v1/OCPP/statusNotification/999332",
-    "dataTransferTariff":chost+"/api/v1/OCPP/dataTransferTariff/999332",
+    "dataTransferTariff":chost+"/api/v1/OCPP/dataTransfer/999332",
     "startTransaction":chost+"/api/v1/OCPP/startTransaction/999332",
     "stopTransaction":chost+"/api/v1/OCPP/stopTransaction/999332",
     "meterValues":chost+"/api/v1/OCPP/meterValues/999332",
     "statusNotification": chost + "/api/v1/OCPP/statusNotification/999332",
 }
+
 headers={
         'Content-type':'application/json', 
         'Accept':'application/json',

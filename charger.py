@@ -33,7 +33,7 @@ idTags = None
 
 logger = Logger()
 global evlogger
-evlogger = logger.initLogger(loglevel=logging.FATAL)
+evlogger = logger.initLogger(loglevel=logging.ERROR)
 conn = None
 
 class Server(metaclass=ABCMeta):
@@ -83,7 +83,7 @@ class Charger(Server):
         # meterValue용 파라메터 변수 들 (기본값)
 
         self.sampled_value = {
-            "cimport": 12,  # Current.Import, 충전전류(A)
+            "cimport": 15,  # Current.Import, 충전전류(A)
             "voltage": 220.0,  # Voltage
             "eairegister": 0,  # Energy.Active.Import.Register (Wh)
             "soc": 10,  # SoC
@@ -92,6 +92,8 @@ class Charger(Server):
 
         self.local_var["X-EVC-BOX"] = charger_id[:13]
         self.local_var["connectorId"] = charger_id[11:12]
+        self.local_var["idTag"] = random.choice(idTags)
+
 
         self.setter = {
             "timestamp": lambda x: datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z") + "Z",
@@ -103,7 +105,7 @@ class Charger(Server):
             "meterStop": lambda x: self.local_var[x],
             "errorCode": lambda x: self.local_var[x],
             "bootNotification_reason": lambda x: self.local_var[x],
-            "idTag": lambda x: idTags[random.randrange(0, len(idTags))],
+            "idTag": lambda x: self.local_var[x],
             "stopTransaction_reason": lambda x: self.local_var[x],
             "statusNotification_reason": lambda x: self.local_var[x],
         }
@@ -119,6 +121,7 @@ class Charger(Server):
             "cmeter",
             "meterStart",
             "meterStop",
+            "idTag"
         ]
         for item in self.local_var:
             if item not in fixed:
@@ -456,7 +459,16 @@ def case_run(charger, case) -> list:
     charger.init_local_var()
 
     out_list = []
-    for task in tqdm(case):
+    pbar = tqdm(case)
+    metercount = case.count(['meterValues'])
+    mc = 1
+    for task in pbar:
+        if task[0] == 'meterValues':
+            pbar.set_description_str(f'Processing : {"meterValues":17} {mc}/{metercount}')
+            mc += 1
+        else:
+            pbar.set_description_str(f'Processing : {task[0]:21}')
+
         if task[0] == "statusNotification":
             if len(task) > 2:  # 2nd element(arg)가 있는 경우만
                 charger.update_var("errorCode", task[2])
@@ -482,6 +494,7 @@ def case_run(charger, case) -> list:
         evlogger.info(charger.local_var)
         evlogger.info("=" * 60)
         # time.sleep(0.1)
+
     return out_list
 
 def main(charger_id="charger_01"):
@@ -522,6 +535,10 @@ def main(charger_id="charger_01"):
     for _ in range(loop_cnt):
         for l in case_run(charger, scenario.normal_case):
             ws.append(l)
+
+    # for _ in range(loop_cnt):
+    #     for l in case_run(charger, scenario.normal_case_reserved):
+    #         ws.append(l)
 
     # for _ in range(loop_cnt):
     #     for l in case_run(charger, scenario.normal_case):
@@ -622,8 +639,8 @@ if __name__ == "__main__":
         crgrList = random.sample([crgr[0] for crgr in getCrgrs()], k=100)
         conn.close()
     else:
-        idTags = ['1010202030306060','5555222233334444']
-        crgrList = ['115000001010A']
+        idTags = ['3333222233334444']  # ,'5555222233334444', 1010202030306060
+        crgrList = ['115000001010A'] # 114100005030A, 115000001010A
 
     main()
 
