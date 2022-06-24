@@ -1,6 +1,4 @@
-import concurrent.futures
 import random
-import string
 
 from evlogger import Logger
 import logging
@@ -30,7 +28,7 @@ name_first = ['주', '하', '창', '희', '수', '경', '혜', '지', '서', '�
 
 alljuso = None
 
-with open("서울특별시_변환완료.csv", "r", encoding='utf-8') as f:
+with open("경기도_변환완료.csv", "r", encoding='utf-8') as f:
     alljuso = [j.strip().split(sep=",") for j in f.readlines()]
 
 def get_lat_lng(lat=37.561253, lng=126.834329):
@@ -81,8 +79,6 @@ def getMCrgrs(chrstn_id = None):
 
         return cur.fetchall()
 
-
-
 def createCrgrMsts(chrstn_id = "115000001", crgr_count=1):
     existCrgrMsts = [crgr[0] for crgr in getMCrgrs(chrstn_id)]
     # print(existCrgrMsts)
@@ -111,18 +107,15 @@ def getMaxChrstn(region):
 
 def get_eng_names():
     from urllib.request import Request, urlopen
-    import random
+    # url="https://svnweb.freebsd.org/csrg/share/dict/words?revision=61569&view=co"
+    # req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    #
+    # web_byte = urlopen(req).read()
 
+    words = [line.rstrip() for line in open("words.txt").readlines()]
+    random.shuffle(words)
 
-    url="https://svnweb.freebsd.org/csrg/share/dict/words?revision=61569&view=co"
-    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-
-    web_byte = urlopen(req).read()
-
-    webpage = web_byte.decode('utf-8')
-    first500 = webpage[:1000].split("\n")
-    random.shuffle(first500)
-    return first500
+    return words
 
 eng_names = get_eng_names()
 
@@ -144,6 +137,7 @@ def createChrstns(region, chrstn_count=0, crgr_count=0):
         [4] 위도
         [5] 경도
     """
+
     chrs = random.sample(region_juso, chrstn_count)
 
     with conn.cursor() as cur:
@@ -316,7 +310,7 @@ def geocoding(param):
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 400_000, 410_000
+    slice_from, slice_to = 100_000, 150_000
     csv = csv[slice_from:slice_to]
 
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
@@ -325,7 +319,7 @@ def convert_address(filename=None):
     lat = manager.list()
     lng = manager.list()
 
-    with Pool(processes=2) as p:
+    with Pool(processes=1) as p:
         max_ = len(address)
         with tqdm(total=max_) as pbar:
             # for i, _ in enumerate(p.imap_unordered(geocoding, [(lat, lng, i) for i in address])):
@@ -342,10 +336,10 @@ def convert_address(filename=None):
 if __name__ == "__main__":
 
     conn = getConnection()
-    # convert_address("po/서울특별시.txt")
-    # createChrstns("11500", chrstn_count=400, crgr_count=50)
+    convert_address("po/경기도.txt")
+    # createChrstns("412", chrstn_count=500, crgr_count=50)
 
     #
-    # # createRegionChrstns(117, 118)
-    createMbrAndCards(200,201)
+    # createRegionChrstns(112, 118)
+    # createMbrAndCards(200,201)
     conn.close()

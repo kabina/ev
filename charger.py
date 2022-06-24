@@ -30,10 +30,10 @@ from tqdm import tqdm
 """랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
 """
 idTags = None
-
+SLEEP = 0.5
 logger = Logger()
 global evlogger
-evlogger = logger.initLogger(loglevel=logging.ERROR)
+evlogger = logger.initLogger(loglevel=logging.INFO)
 conn = None
 
 class Server(metaclass=ABCMeta):
@@ -94,9 +94,8 @@ class Charger(Server):
         self.local_var["connectorId"] = charger_id[11:12]
         self.local_var["idTag"] = random.choice(idTags)
 
-
         self.setter = {
-            "timestamp": lambda x: datetime.now().strftime("%Y-%m-%dT%H:%M:%S%Z") + "Z",
+            "timestamp": lambda x: datetime.now().replace(microsecond=0).isoformat(),
             "transactionId": lambda x: self.local_var[x],
             "vendorId": lambda x: self.local_var[x],
             "connectorId": lambda x: self.local_var[x],
@@ -489,7 +488,7 @@ def case_run(charger, case) -> list:
             row = charger.make_request(command=task[0])
             out_list.append(row)
 
-        time.sleep(0.5)
+        time.sleep(SLEEP)
         evlogger.info("=" * 20 + "최종 충전기 내부 변수 상태" + "=" * 18)
         evlogger.info(charger.local_var)
         evlogger.info("=" * 60)
@@ -529,7 +528,7 @@ def main(charger_id="charger_01"):
     loop_cnt = 1
     print(f"시나리오: 총 {loop_cnt}회 충전 수행")
 
-    # for l in case_run(charger, scenario.heartbeat_after_boot):
+    # for l in case_run(charger, scenario.error_just_after_boot):
     #     ws.append(l)
 
     for _ in range(loop_cnt):
@@ -639,7 +638,10 @@ if __name__ == "__main__":
         crgrList = random.sample([crgr[0] for crgr in getCrgrs()], k=100)
         conn.close()
     else:
-        idTags = ['3333222233334444']  # ,'5555222233334444', 1010202030306060
+        """
+        # ,'5555222233334444', 3333222233334444(정지카드), 1010202030306060, 1010010174366716(미가입카드), 1010010174721340(가입카드)
+        """
+        idTags = ['3333222233334444']
         crgrList = ['115000001010A'] # 114100005030A, 115000001010A
 
     main()
