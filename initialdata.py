@@ -20,8 +20,6 @@ def getConnection():
 
     return conn
 
-lat_c , lng_c = 37.561253, 126.834329
-
 last_name = ['김','이', '박', '최', '안', '장', '윤','구','차', '정','주','진', '추','임','강']
 name_first = ['주', '하', '창', '희', '수', '경', '혜', '지', '서', '현', '주', '진', '광', \
               '천', '선', '경','철', '영', '기', '정', '우', '도', '윤', '강', '성', '중', '나', '용','이']
@@ -164,12 +162,13 @@ def createCrgrs(chrstn_id = "115000001", crgr_count=0):
     with conn.cursor() as cur:
         for idx, crgr in enumerate(list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)]))):
             reserved = ((idx%2)==0)
-            cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
-            values('{crgr}', '{crgr+['0A','0B'][random.randrange(0,3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
+            connector = random.choice(['0A', '0B'])
+            cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn, crgr_rsv_mode_cd ) \
+            values('{crgr}', '{crgr+connector}', '{chrstn_id}', '{crgr[9:]}', 'Y', {'02' if reserved else '01'})")
 
             if reserved :
-                cur.execute(f" insert into rcv_crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
-                            values('{crgr}', '{crgr + ['0A', '0B', '0C'][random.randrange(0, 3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
+                cur.execute(f" insert into rsv_crgr_choc_info(rsv_plcy_uuid, crgr_cid) " \                
+                            f" values('1, {crgr}', '{crgr + connector}' )")
 
 
 def createRegionChrstns(start, end):
@@ -331,7 +330,6 @@ def convert_address(filename=None):
             # for i, _ in enumerate(p.imap_unordered(geocoding, [(lat, lng, i) for i in address])):
             for i, _ in enumerate(p.imap(geocoding, [(lat, lng, i) for i in address])):
                 pbar.update()
-
 
     address_df = pd.DataFrame({'우편번호': csv["우편번호"].astype(str), '주소':address, '법정동코드':csv['법정동코드'],
                                '건물명':csv['시군구용건물명'], '위도':list(lat), '경도':list(lng)})
