@@ -162,9 +162,15 @@ def createChrstns(region, chrstn_count=0, crgr_count=0):
 def createCrgrs(chrstn_id = "115000001", crgr_count=0):
 
     with conn.cursor() as cur:
-        for crgr in list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)])):
+        for idx, crgr in enumerate(list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)]))):
+            reserved = ((idx%2)==0)
             cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
-            values('{crgr}', '{crgr+['0A','0B','0C'][random.randrange(0,3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
+            values('{crgr}', '{crgr+['0A','0B'][random.randrange(0,3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
+
+            if reserved :
+                cur.execute(f" insert into rcv_crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
+                            values('{crgr}', '{crgr + ['0A', '0B', '0C'][random.randrange(0, 3)]}', '{chrstn_id}', '{crgr[9:]}', 'Y' )")
+
 
 def createRegionChrstns(start, end):
     # 충전소 생성, 충전기 생성(M/C)
@@ -310,7 +316,7 @@ def geocoding(param):
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 100_000, 150_000
+    slice_from, slice_to = 500_000, 600_000
     csv = csv[slice_from:slice_to]
 
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
@@ -335,11 +341,11 @@ def convert_address(filename=None):
 
 if __name__ == "__main__":
 
-    conn = getConnection()
+    # conn = getConnection()
     convert_address("po/경기도.txt")
     # createChrstns("412", chrstn_count=500, crgr_count=50)
 
     #
     # createRegionChrstns(112, 118)
     # createMbrAndCards(200,201)
-    conn.close()
+    # conn.close()
