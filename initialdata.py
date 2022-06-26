@@ -312,10 +312,11 @@ def geocoding(param):
     param[0].append(x)
     param[1].append(y)
 
+
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 500_000, 600_000
+    slice_from, slice_to = 900_000, 1000_000
     csv = csv[slice_from:slice_to]
 
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
