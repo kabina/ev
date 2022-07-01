@@ -30,7 +30,7 @@ from tqdm import tqdm
 """랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
 """
 idTags = None
-SLEEP = 0.5
+SLEEP = 1
 logger = Logger()
 global evlogger
 evlogger = logger.initLogger(loglevel=logging.INFO)
@@ -259,7 +259,7 @@ class Charger(Server):
                 # tariff와 같이 하위 List Element내에 dict가 반복되는 데이터셋 처리
                 if to_item[0] in diff_from_items:
                     for idx in range(len(to_item)):
-                        if diff_from_items[to_item[0]][idx] is dict:
+                        if len(diff_from_items[to_item[0]]) > 0 and diff_from_items[to_item[0]][idx] is dict:
                             self.check_response(diff_from_items[to_item[0]][idx], to_item[1][idx])
                         else:
                             break
@@ -405,6 +405,7 @@ class Charger(Server):
         evlogger.info(data)
 
         response = requests.post(url, headers=header, data=data, verify=False)
+
         if response.status_code in [503, 404, 403, 500, 401]:
             evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
             self.local_var["status"] = "ServerError"
@@ -482,7 +483,7 @@ def case_run(charger, case) -> list:
         if task[0] == "meterValues":
             for _ in range(random.randrange(1,10)):
                 row = charger.make_request(command=task[0])
-                time.sleep(0.5)
+                time.sleep(SLEEP)
                 out_list.append(row)
         else:
             row = charger.make_request(command=task[0])
@@ -537,6 +538,10 @@ def main(charger_id="charger_01"):
 
     # for _ in range(loop_cnt):
     #     for l in case_run(charger, scenario.normal_case_reserved):
+    #         ws.append(l)
+
+    # for _ in range(loop_cnt):
+    #     for l in case_run(charger, scenario.invalid_card_in_reserved):
     #         ws.append(l)
 
     # for _ in range(loop_cnt):
@@ -630,7 +635,7 @@ def getMCrgrs(chrstn_id = None):
         return cur.fetchall()
 
 if __name__ == "__main__":
-    DBCONN = True
+    DBCONN = False
 
     if DBCONN :
         conn = getConnection()
@@ -639,10 +644,18 @@ if __name__ == "__main__":
         conn.close()
     else:
         """
-        # ,'5555222233334444', 3333222233334444(정지카드), 1010202030306060, 1010010174366716(미가입카드), 1010010174721340(가입카드)
+        5555222233334444, 3333222233334444(정지카드), 1010202030306060, 1010010174366716(미가입카드), 1010010174721340(가입카드)
+        9999999999999999 비회원(APP Case)
+        4873600231574325 (cust012 - 고정요금)
+        4748664213640739 (cust013 - 고정-멤버십(일반))
+        4200293606526754 (cust014 - 고정-멤버십(VIP))
+        4634407056130185 (cust015 - 구독요금제)
+        1010010174366716 (로밍-미가입카드)
+        1010010174721340 (로밍-가입카드)
+        4677893456241782 (안창선)
         """
-        idTags = ['3333222233334444']
-        crgrList = ['115000001010A'] # 114100005030A, 115000001010A
+        idTags = ['4677893456241782'] # 1111222233334444, 4873600231574325(cust012-고정요금)
+        crgrList = ['112000012010A'] # 112000006240A, 114100005030A, 115000001010A, 112000006220B, 112000012010A, 114100005090A(예약)
 
     main()
 

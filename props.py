@@ -24,8 +24,6 @@ headers={
 }
 
 
-
-
 api_headers={
         "authorize":
     ["X-EVC-RI","X-EVC-BOX","X-EVC-MDL","X-EVC-OS"],
@@ -46,6 +44,7 @@ api_headers={
         "statusNotification":
     ["X-EVC-RI", "X-EVC-BOX", "X-EVC-MDL"],
 }
+
 
 api_params = { "bootNotification":{
             "reason":"ApplicationReset",
@@ -220,11 +219,11 @@ api_response = {
         },
     },
     "dataTransferHeartbeat":{
-        "currentTime":["M", None]
-        # "status":["M", None],
-        # "data":{
-        #     "currentTime":["M", None]
-        # }
+        # "currentTime":["M", None]
+        "status":["M", None],
+        "data":{
+            "currentTime":["M", None]
+        }
     },
     "statusNotification":{
 
