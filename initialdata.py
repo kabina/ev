@@ -27,8 +27,8 @@ name_first = ['주', '하', '창', '희', '수', '경', '혜', '지', '서', '�
 
 alljuso = None
 
-with open("경기도_변환완료.csv", "r", encoding='utf-8') as f:
-    alljuso = [j.strip().split(sep=",") for j in f.readlines()]
+# with open("경기도_변환완료.csv", "r", encoding='utf-8') as f:
+#     alljuso = [j.strip().split(sep=",") for j in f.readlines()]
 
 def get_lat_lng(lat=37.561253, lng=126.834329):
     radius = random.randrange(1,1000)*0.0001
@@ -321,8 +321,11 @@ def geocoding(param):
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 900_000, 1000_000
+    slice_from, slice_to = 0, 100_000
     csv = csv[slice_from:slice_to]
+
+    del_idx = csv[csv['시군구용건물명']==''].index
+    csv = csv.drop(del_idx)
 
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
 
@@ -330,7 +333,7 @@ def convert_address(filename=None):
     lat = manager.list()
     lng = manager.list()
 
-    with Pool(processes=1) as p:
+    with Pool(processes=2) as p:
         max_ = len(address)
         with tqdm(total=max_) as pbar:
             # for i, _ in enumerate(p.imap_unordered(geocoding, [(lat, lng, i) for i in address])):
@@ -345,14 +348,14 @@ def convert_address(filename=None):
 
 if __name__ == "__main__":
 
-    conn = getConnection()
-    #convert_address("po/경기도.txt")
+    #conn = getConnection()
+    convert_address("po/충청남도.txt")
 
-    createChrstns("415", chrstn_count=300, crgr_count=20)
-    createChrstns("416", chrstn_count=300, crgr_count=20)
-    createChrstns("418", chrstn_count=300, crgr_count=20)
+    # createChrstns("415", chrstn_count=300, crgr_count=20)
+    # createChrstns("416", chrstn_count=300, crgr_count=20)
+    # createChrstns("418", chrstn_count=300, crgr_count=20)
 
     #
     # createRegionChrstns(112, 118)
     # createMbrAndCards(200,201)
-    conn.close()
+    # conn.close()

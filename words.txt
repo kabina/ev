@@ -507,7 +507,7 @@ ailanthus
 aile
 aileron
 aim
-aint
+ain't
 Ainu
 air
 airborne
@@ -1100,7 +1100,7 @@ anxiety
 anxious
 any
 anybody
-anybodyd
+anybody'd
 anyhow
 anyone
 anyplace
@@ -1286,7 +1286,7 @@ areaway
 areawide
 arena
 arenaceous
-arent
+aren't
 Arequipa
 Ares
 Argentina
@@ -1409,7 +1409,7 @@ arty
 Aruba
 arum
 aryl
-as
+a's
 as
 asbestos
 ascend
@@ -3228,7 +3228,7 @@ Bryn
 bryophyta
 bryophyte
 bryozoa
-bs
+b's
 BSTJ
 BTL
 bub
@@ -3657,7 +3657,7 @@ canon
 canonic
 Canopus
 canopy
-cant
+can't
 cant
 Cantabrigian
 cantaloupe
@@ -5515,7 +5515,7 @@ couch
 cougar
 cough
 could
-couldnt
+couldn't
 coulomb
 Coulter
 council
@@ -5845,7 +5845,7 @@ crystalline
 crystallite
 crystallographer
 crystallography
-cs
+c's
 csnet
 CT
 cub
@@ -6096,7 +6096,7 @@ darn
 DARPA
 Darrell
 Darry
-dart
+d'art
 dart
 Dartmouth
 Darwin
@@ -6583,7 +6583,7 @@ desultory
 detach
 detail
 detain
-detat
+d'etat
 detect
 detector
 detent
@@ -6710,7 +6710,7 @@ dictum
 did
 didactic
 diddle
-didnt
+didn't
 Dido
 die
 Diebold
@@ -6988,8 +6988,8 @@ dodge
 dodo
 Dodson
 doe
-doesnt
-doeuvre
+doesn't
+d'oeuvre
 doff
 dog
 dogbane
@@ -7054,7 +7054,7 @@ Donner
 donnybrook
 donor
 Donovan
-dont
+don't
 doodle
 Dooley
 Doolittle
@@ -7253,7 +7253,7 @@ Drury
 dry
 dryad
 Dryden
-ds
+d's
 du
 dual
 Duane
@@ -7497,7 +7497,7 @@ Edwina
 eel
 eelgrass
 EEOC
-eer
+e'er
 eerie
 eerily
 efface
@@ -8019,7 +8019,7 @@ erupt
 eruption
 Ervin
 Erwin
-es
+e's
 escadrille
 escalate
 escapade
@@ -9395,7 +9395,7 @@ frustrater
 frustum
 fry
 Frye
-fs
+f's
 Ft
 FTC
 Fuchs
@@ -10297,7 +10297,7 @@ grumpy
 grunt
 Gruyere
 gryphon
-gs
+g's
 GSA
 GU
 Guam
@@ -10441,7 +10441,7 @@ Haddad
 haddock
 Hades
 Hadley
-hadnt
+hadn't
 Hadrian
 hadron
 hafnium
@@ -10661,7 +10661,7 @@ Harvey
 has
 hash
 hashish
-hasnt
+hasn't
 hasp
 hassle
 hast
@@ -10695,7 +10695,7 @@ Hausdorff
 Havana
 have
 haven
-havent
+haven't
 haversack
 Havilland
 havoc
@@ -10796,7 +10796,7 @@ Heckman
 hectic
 hector
 Hecuba
-hed
+he'd
 hedge
 hedgehog
 hedonism
@@ -10830,7 +10830,7 @@ heliocentric
 heliotrope
 helium
 helix
-hell
+he'll
 hell
 hellbender
 hellebore
@@ -11356,7 +11356,7 @@ hoyden
 hoydenish
 Hoyt
 Hrothgar
-hs
+h's
 hub
 Hubbard
 Hubbell
@@ -11566,7 +11566,7 @@ icosahedra
 icosahedral
 icosahedron
 icy
-Id
+I'd
 id
 Ida
 Idaho
@@ -11617,7 +11617,7 @@ IL
 ileum
 iliac
 Iliad
-Ill
+I'll
 ill
 illegal
 illegible
@@ -11640,7 +11640,7 @@ illustrate
 illustrious
 Ilona
 Ilyushin
-Im
+I'm
 image
 imagen
 imagery
@@ -12521,7 +12521,7 @@ Irvin
 Irvine
 Irving
 Irwin
-is
+i's
 is
 Isaac
 Isaacson
@@ -12540,7 +12540,7 @@ Islamic
 island
 isle
 islet
-isnt
+isn't
 isochronal
 isochronous
 isocline
@@ -12567,13 +12567,13 @@ italic
 Italy
 itch
 itchy
-itd
+it'd
 item
 iterate
 Ithaca
 itinerant
 itinerary
-itll
+it'll
 Ito
 itself
 IT&T
@@ -12581,7 +12581,7 @@ ITT
 iv
 Ivan
 Ivanhoe
-Ive
+I've
 Iverson
 ivory
 ivy
@@ -12805,7 +12805,7 @@ joyous
 joyride
 joystick
 Jr
-js
+j's
 Juan
 Juanita
 jubilant
@@ -13190,7 +13190,7 @@ krummholz
 Kruse
 krypton
 KS
-ks
+k's
 Ku
 kudo
 kudzu
@@ -13870,7 +13870,7 @@ lodge
 lodgepole
 Lodowick
 Loeb
-loeil
+l'oeil
 loess
 loft
 lofty
@@ -13991,7 +13991,7 @@ loy
 loyal
 loyalty
 lozenge
-ls
+l's
 LSI
 LTV
 Lubbock
@@ -14090,7 +14090,7 @@ luxuriate
 luxurious
 luxury
 Luzon
-Lvov
+L'vov
 lycee
 lycopodium
 Lydia
@@ -14999,7 +14999,7 @@ mien
 miff
 mig
 might
-mightnt
+mightn't
 mighty
 mignon
 migrant
@@ -15445,7 +15445,7 @@ MPH
 Mr
 Mrs
 Ms
-ms
+m's
 Mt
 mu
 much
@@ -15560,7 +15560,7 @@ mustache
 mustachio
 mustang
 mustard
-mustnt
+mustn't
 musty
 mutagen
 mutandis
@@ -15752,7 +15752,7 @@ needful
 needham
 needle
 needlepoint
-neednt
+needn't
 needy
 nefarious
 Neff
@@ -15970,7 +15970,7 @@ nobleman
 noblemen
 noblesse
 nobody
-nobodyd
+nobody'd
 nocturnal
 nocturne
 nod
@@ -16095,7 +16095,7 @@ noxious
 nozzle
 NRC
 nroff
-ns
+n's
 NSF
 NTIS
 nu
@@ -16202,7 +16202,7 @@ oblong
 obnoxious
 oboe
 oboist
-OBrien
+O'Brien
 obscene
 obscure
 obsequious
@@ -16255,9 +16255,9 @@ oceanographer
 oceanography
 oceanside
 ocelot
-oclock
-OConnell
-OConnor
+o'clock
+O'Connell
+O'Connor
 Oct
 octagon
 octagonal
@@ -16281,21 +16281,21 @@ ocular
 odd
 oddball
 ode
-ODell
+O'Dell
 Odessa
 Odin
 odious
 odium
 odometer
-ODonnell
+O'Donnell
 odorous
-ODwyer
+O'Dwyer
 Odysseus
 odyssey
 oedipal
 Oedipus
 oenology
-oer
+o'er
 oersted
 of
 off
@@ -16332,7 +16332,7 @@ ogle
 ogre
 ogress
 oh
-OHare
+O'Hare
 Ohio
 ohm
 ohmic
@@ -16361,7 +16361,7 @@ oldster
 Olduvai
 oldy
 oleander
-OLeary
+O'Leary
 olefin
 oleomargarine
 olfactory
@@ -16406,7 +16406,7 @@ oncology
 oncoming
 one
 Oneida
-ONeill
+O'Neill
 onerous
 oneself
 onetime
@@ -16567,7 +16567,7 @@ orthorhombic
 Orville
 Orwell
 Orwellian
-os
+o's
 Osaka
 Osborn
 Osborne
@@ -16576,7 +16576,7 @@ oscillate
 oscillatory
 oscilloscope
 Osgood
-OShea
+O'Shea
 Oshkosh
 osier
 Osiris
@@ -16599,7 +16599,7 @@ ostracism
 ostracod
 Ostrander
 ostrich
-OSullivan
+O'Sullivan
 Oswald
 Othello
 other
@@ -16615,7 +16615,7 @@ Ottoman
 Ouagadougou
 ouch
 ought
-oughtnt
+oughtn't
 ounce
 our
 ourselves
@@ -18465,7 +18465,7 @@ prurient
 Prussia
 prussic
 pry
-ps
+p's
 psalm
 psalter
 pseudo
@@ -18661,7 +18661,7 @@ python
 q
 Qatar
 QED
-qs
+q's
 qua
 quack
 quackery
@@ -19664,7 +19664,7 @@ royal
 royalty
 Royce
 RPM
-rs
+r's
 RSVP
 Ruanda
 rub
@@ -20576,7 +20576,7 @@ shamrock
 Shanghai
 shank
 Shannon
-shant
+shan't
 Shantung
 shanty
 shape
@@ -20612,7 +20612,7 @@ sheath
 sheathe
 sheave
 shebang
-shed
+she'd
 shed
 Shedir
 Sheehan
@@ -20628,7 +20628,7 @@ Sheila
 Shelby
 Sheldon
 shelf
-shell
+she'll
 shell
 Shelley
 shellfish
@@ -20730,7 +20730,7 @@ shotbush
 shotgun
 should
 shoulder
-shouldnt
+shouldn't
 shout
 shove
 shovel
@@ -21337,11 +21337,11 @@ somber
 sombre
 some
 somebody
-somebodyll
+somebody'll
 someday
 somehow
 someone
-someonell
+someone'll
 someplace
 Somers
 somersault
@@ -21718,7 +21718,7 @@ squirrel
 squirt
 squishy
 Sri
-ss
+s's
 SSE
 SST
 SSW
@@ -22975,8 +22975,8 @@ thankful
 thanksgiving
 that
 thatch
-thatd
-thatll
+that'd
+that'll
 thaw
 Thayer
 the
@@ -23015,12 +23015,12 @@ thereabouts
 thereafter
 thereat
 thereby
-thered
+there'd
 therefor
 therefore
 therefrom
 therein
-therell
+there'll
 thereof
 thereon
 Theresa
@@ -23047,10 +23047,10 @@ Thessaly
 theta
 Thetis
 they
-theyd
-theyll
-theyre
-theyve
+they'd
+they'll
+they're
+they've
 thiamin
 thick
 thicken
@@ -23080,7 +23080,7 @@ thirtieth
 thirty
 thirtyfold
 this
-thisll
+this'll
 thistle
 thistledown
 thither
@@ -23289,7 +23289,7 @@ Tobago
 Toby
 toccata
 today
-todayll
+today'll
 Todd
 toddle
 toddy
@@ -23771,7 +23771,7 @@ TRW
 try
 trypsin
 trytophan
-ts
+t's
 tsar
 tsarina
 tset
@@ -24110,7 +24110,7 @@ Ursuline
 Uruguay
 urushiol
 U.S
-us
+u's
 us
 U.S.A
 USA
@@ -24565,7 +24565,7 @@ vow
 vowel
 voyage
 Vreeland
-vs
+v's
 vs
 VT
 Vulcan
@@ -24701,7 +24701,7 @@ Washburn
 Washington
 washout
 washy
-wasnt
+wasn't
 wasp
 waspish
 Wasserman
@@ -24793,7 +24793,7 @@ Webb
 weber
 Webster
 WECo
-wed
+we'd
 wed
 wedge
 wedlock
@@ -24821,7 +24821,7 @@ welcome
 weld
 Weldon
 welfare
-well
+we'll
 well
 wellbeing
 Weller
@@ -24835,9 +24835,9 @@ Wendell
 Wendy
 went
 wept
+we're
 were
-were
-werent
+weren't
 Werner
 wert
 Werther
@@ -24856,7 +24856,7 @@ Weston
 westward
 wet
 wetland
-weve
+we've
 Weyerhauser
 whack
 whale
@@ -24867,11 +24867,11 @@ wharf
 Wharton
 wharves
 what
-whatd
+what'd
 whatever
 Whatley
 whatnot
-whatre
+what're
 whatsoever
 wheat
 Wheatstone
@@ -24896,12 +24896,12 @@ where
 whereabout
 whereas
 whereby
-whered
+where'd
 wherefore
 wherein
 whereof
 whereon
-wherere
+where're
 wheresoever
 whereupon
 wherever
@@ -24959,14 +24959,14 @@ whiz
 whizzing
 who
 whoa
-whod
+who'd
 whodunit
 whoever
 whole
 wholehearted
 wholesale
 wholesome
-wholl
+who'll
 wholly
 whom
 whomever
@@ -25163,7 +25163,7 @@ wonderful
 wonderland
 wondrous
 Wong
-wont
+won't
 wont
 woo
 wood
@@ -25236,7 +25236,7 @@ worthwhile
 worthy
 Wotan
 would
-wouldnt
+wouldn't
 wound
 wove
 woven
@@ -25282,7 +25282,7 @@ Wronskian
 wrote
 wrought
 wry
-ws
+w's
 Wu
 Wuhan
 WV
@@ -25305,7 +25305,7 @@ xerox
 Xerxes
 Xhosa
 xi
-xs
+x's
 xylem
 xylene
 xylophone
@@ -25392,22 +25392,22 @@ Yorktown
 Yosemite
 Yost
 you
-youd
-youll
+you'd
+you'll
 young
 youngish
 youngster
 Youngstown
 your
-youre
+you're
 yourself
 yourselves
 youth
 youthful
-youve
+you've
 yow
 Ypsilanti
-ys
+y's
 ytterbium
 yttrium
 Yucatan
@@ -25480,7 +25480,7 @@ Zorn
 Zoroaster
 Zoroastrian
 zounds
-zs
+z's
 zucchini
 Zulu
 Zurich
