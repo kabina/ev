@@ -4,11 +4,15 @@ import pandas as pd
 
 dflist = []
 
+filename = "경기도"
+
 for file in os.listdir("po"):
-    if file.startswith("경기도.txt_변환완료") :
+    if file.startswith(f"{filename}.txt_변환완료") :
         df = pd.read_table(f"po/{file}", sep=",", dtype={"우편번호": str, "위도":str, "경도":str})
         df['경도'] = df['경도'].replace(r'\\n', '', regex=True)
+        del_idx = df[df['건물명'].isnull()].index
+        df = df.drop(del_idx)
         dflist.append(df)
 
 dfs = pd.concat(dflist)
-dfs.to_csv("경기도_변환완료.csv", index=False)
+dfs.to_csv(f"{filename}_변환완료.csv", index=False)

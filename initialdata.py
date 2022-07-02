@@ -27,8 +27,6 @@ name_first = ['주', '하', '창', '희', '수', '경', '혜', '지', '서', '�
 
 alljuso = None
 
-# with open("경기도_변환완료.csv", "r", encoding='utf-8') as f:
-#     alljuso = [j.strip().split(sep=",") for j in f.readlines()]
 
 def get_lat_lng(lat=37.561253, lng=126.834329):
     radius = random.randrange(1,1000)*0.0001
@@ -113,7 +111,10 @@ def get_tel_no():
 def get_email():
     return random.choice(eng_names)+"@gmail.com"
 
-def createChrstns(region, chrstn_count=0, crgr_count=0):
+def createChrstns(filename, region, chrstn_count=0, crgr_count=0):
+
+    with open(filename, "r", encoding='utf-8') as f:
+        alljuso = [j.strip().split(sep=",") for j in f.readlines()]
 
     max_seq = getMaxChrstn(region)%10000 ## 수정해야 함(지역별 최대 충전소 시퀀스)
     region_juso = [j for j in alljuso if j[2].startswith(region)]
@@ -141,6 +142,7 @@ def createChrstns(region, chrstn_count=0, crgr_count=0):
             values('{chrstn}', '{chrstn[4:]:06}', 'U+{chr[3]}충전소', '{['04','05'][random.randrange(0,2)]}',\
             '{get_name()}', '{juso[0]}', '{juso[1]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
              '01', '{get_name()}', '{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}' )"
+            print(sql)
             cur.execute(sql)
             createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count)
             createCrgrs(chrstn_id = chrstn, crgr_count=crgr_count)
@@ -321,12 +323,12 @@ def geocoding(param):
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 0, 100_000
+    slice_from, slice_to = 0, 1000_000
     csv = csv[slice_from:slice_to]
 
-    del_idx = csv[csv['시군구용건물명']==''].index
+    del_idx = csv[csv['시군구용건물명'].isnull()].index
     csv = csv.drop(del_idx)
-
+    #print(csv['시군구용건물명'])
     address = csv['시도']+" "+csv['시군구']+" "+csv['도로명']+" "+csv['건물번호본번']
 
     manager = multiprocessing.Manager()
@@ -348,12 +350,12 @@ def convert_address(filename=None):
 
 if __name__ == "__main__":
 
-    #conn = getConnection()
-    convert_address("po/충청남도.txt")
+    # conn = getConnection()
+    convert_address("po/강원도.txt")
 
-    # createChrstns("415", chrstn_count=300, crgr_count=20)
-    # createChrstns("416", chrstn_count=300, crgr_count=20)
-    # createChrstns("418", chrstn_count=300, crgr_count=20)
+    # createChrstns("충청북도_변환완료.csv", "43", chrstn_count=1000, crgr_count=10)
+    # createChrstns("충청남도_변환완료.csv", "44", chrstn_count=1000, crgr_count=10)
+    # createChrstns("경기도_변환완료.csv", "418", chrstn_count=300, crgr_count=20)
 
     #
     # createRegionChrstns(112, 118)
