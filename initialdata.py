@@ -26,7 +26,8 @@ name_first = ['주', '하', '창', '희', '수', '경', '혜', '지', '서', '�
               '천', '선', '경','철', '영', '기', '정', '우', '도', '윤', '강', '성', '중', '나', '용','이']
 
 alljuso = None
-
+with open("서울특별시_변환완료.csv", "r", encoding='utf-8') as f:
+    alljuso = [j.strip().split(sep=",") for j in f.readlines()]
 
 def get_lat_lng(lat=37.561253, lng=126.834329):
     radius = random.randrange(1,1000)*0.0001
@@ -142,7 +143,6 @@ def createChrstns(filename, region, chrstn_count=0, crgr_count=0):
             values('{chrstn}', '{chrstn[4:]:06}', 'U+{chr[3]}충전소', '{['04','05'][random.randrange(0,2)]}',\
             '{get_name()}', '{juso[0]}', '{juso[1]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
              '01', '{get_name()}', '{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}' )"
-            print(sql)
             cur.execute(sql)
             createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count)
             createCrgrs(chrstn_id = chrstn, crgr_count=crgr_count)
@@ -193,10 +193,10 @@ def createMember(member = "cust01"):
         juso = [random.choice(alljuso)][0]
         juso_adr = juso[1].split()
         cur.execute(f" insert into mbr_info(mbr_id, mbr_stus_cd, mbr_nm, indv_id, lgin_mthd_cd, pswd, emal_addr, \
-        mbr_divs_cd, rep_cars_no, mbsp_grd_cd ,zpcd, badr, dadr, hpno, area_ctdo, area_ccw, reg_dttm ) \
+        mbr_divs_cd, mbsp_grd_cd ,zpcd, badr, dadr, hpno, area_ctdo, area_ccw, reg_dttm ) \
         values('{member}', '01', '{get_name()}', '{member}', '01', \
-        'e52e5b9c1e8c3356d2baa451511131818cbc06e949213b6e4f49cd3589e86712', \
-        '{get_email()}', '01', '{get_car_no()}', '00', '{juso[0]}', '{juso[1]}', \
+        '48000d754ed116dfc5719bf5b037dd7245fc9272b822f68c892a1ef30d37079b', \
+        '{get_email()}', '01', '00', '{juso[0]}', '{juso[1]}', \
         '{juso[1]}', '{get_tel_no()}', '{juso_adr[0]}', '{juso_adr[1]}', '{datetime.datetime.now()}')")
 
 
@@ -207,9 +207,9 @@ def createMemberEtc(member = "cust01"):
         - aply_chrg : 300 (kw당 요금(원))
     """
     with conn.cursor() as cur:
-        cur.execute(f" insert into mbr_etc_info(mbr_id, stlm_mthd_cd, tos_blng_key, pp_entr_yn, pp_kd_cd, pp_uuid, \
+        cur.execute(f" insert into mbr_etc_info(mbr_id, stlm_mthd_cd, toss_blng_key, pp_entr_yn, pp_kd_cd, pp_uuid, \
         pp_sno, pp_divs_cd, chrg_aply_divs_cd, aply_chrg_base_cd, sscb_chrg_exmt_yn, aply_chrg_nm, aply_chrg_grd, aply_chrg ) \
-        values('{member}', '01', 'TOSS_BLING_KEY', 'N', '01', 1, 1, '01', '01', '01', 'Y', '고정요금제', 1, 300 )")
+        values('{member}', '01', 'TOSS_BLING_KEY', 'N', '01', 1, 1, '01', '01', '01', 'Y', '고정요금제', 300, 300 )")
 
 def createCards(member = "cust01", card = "0000000000000000", sno=0):
 
@@ -223,15 +223,10 @@ def createCards(member = "cust01", card = "0000000000000000", sno=0):
 def createMbrStlm(member = "cust01"):
     with conn.cursor() as cur:
         for j in range(1,2):
-            cur.execute(f" insert into mbr_stlm_card_info(mbr_id, tos_key, brnd_pay_yn, card_divs_cd, rep_stlm_card_yn, \
+            cur.execute(f" insert into mbr_stlm_card_info(mbr_id, toss_key, card_divs_cd, rep_stlm_card_yn, \
             ccrd_cmpy_nm, cdco_cd, card_no, card_nm, card_id, card_kd, ownr_kd, stop_yn, poca_asgn_yn ) \
-            values('{member}', 'HWSxOqggbb6Hlrb4GiMx', 'Y', '01', 'Y', \
+            values('{member}', 'HWSxOqggbb6Hlrb4GiMx', '01', 'Y', \
             '롯데', '51', '513223******4432', '롯데카드', 'c_213123j3jk23jk2k', '신용', '개인', 'N', 'Y') ")
-
-def getMemberInfo():
-    stlm = {"brand_pay_yn":['Y', 'N'], "rep_stlm_card_yn":['Y', 'N'], "stop_yn":['Y', 'N'], "poca_asgn_yn":['Y','N']}
-    etc = {"pp_entr_yn":['Y','N'], "pp_kd_cd":['01','02'], "pp_sno":1}
-
 
 def createMbrAndCards(start, end):
 
@@ -239,7 +234,7 @@ def createMbrAndCards(start, end):
 
     for i in tqdm(range(start,end)):
         evlogger.info(f"회원 및 회원카드 생성: {i}")
-        member_id = f"cust{i:04}@gmail.com"
+        member_id = f"{random.choice(eng_names).lower()}{random.randrange(1,99)}@voltup.com"
         createMember(member= member_id)
         createMemberEtc(member= member_id)
         createMbrStlm(member=member_id)
@@ -350,14 +345,15 @@ def convert_address(filename=None):
 
 if __name__ == "__main__":
 
-    # conn = getConnection()
-    convert_address("po/강원도.txt")
+    conn = getConnection()
+    # convert_address("po/강원도.txt")
 
     # createChrstns("충청북도_변환완료.csv", "43", chrstn_count=1000, crgr_count=10)
+    createChrstns("서울특별시_변환완료.csv", "11470", chrstn_count=10, crgr_count=10)
     # createChrstns("충청남도_변환완료.csv", "44", chrstn_count=1000, crgr_count=10)
-    # createChrstns("경기도_변환완료.csv", "418", chrstn_count=300, crgr_count=20)
-
+    # createChrstns("경기도_변환완료.csv", "414", chrstn_count=100, crgr_count=10)
+    # createChrstns("강원도_변환완료.csv", "42", chrstn_count=1000, crgr_count=20)
     #
     # createRegionChrstns(112, 118)
-    # createMbrAndCards(200,201)
-    # conn.close()
+    # createMbrAndCards(1,1000)
+    conn.close()

@@ -2,9 +2,9 @@ import os
 import pandas as pd
 
 
-dflist = []
+csvlist = []
 
-filename = "경기도"
+filename = "강원도"
 
 for file in os.listdir("po"):
     if file.startswith(f"{filename}.txt_변환완료") :
@@ -12,7 +12,7 @@ for file in os.listdir("po"):
         df['경도'] = df['경도'].replace(r'\\n', '', regex=True)
         del_idx = df[df['건물명'].isnull()].index
         df = df.drop(del_idx)
-        dflist.append(df)
+        csvlist.append(df)
 
-dfs = pd.concat(dflist)
+dfs = pd.concat(csvlist)
 dfs.to_csv(f"{filename}_변환완료.csv", index=False)
