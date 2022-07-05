@@ -1,9 +1,7 @@
 import random
-import string
-
 from evlogger import Logger
 import logging
-import time, json, requests, datetime
+import time, json, datetime
 from tqdm import tqdm
 import multiprocessing
 from multiprocessing import Pool
@@ -144,29 +142,34 @@ def createChrstns(filename, region, chrstn_count=0, crgr_count=0):
             '{get_name()}', '{juso[0]}', '{juso[1]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
              '01', '{get_name()}', '{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}' )"
             cur.execute(sql)
-            createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count)
-            createCrgrs(chrstn_id = chrstn, crgr_count=crgr_count)
+            connector = random.choice(['A', 'C'])
+            createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count, connector=connector)
+            createCrgrs(chrstn_id = chrstn, crgr_count=crgr_count, connector=connector)
         conn.commit()
 
 
-def createCrgrMsts(chrstn_id = "115000001", crgr_count=1):
+def createCrgrMsts(chrstn_id = "115000001", crgr_count=1, connector="A"):
     existCrgrMsts = [crgr[0] for crgr in getMCrgrs(chrstn_id)]
     # print(existCrgrMsts)
     # print(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,100)]) - set(existCrgrMsts))
 
     with conn.cursor() as cur:
-        for idx, crgr in enumerate(list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)]) - set(existCrgrMsts))):
+        for idx, crgr in enumerate(list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)])
+                                        - set(existCrgrMsts))):
             reserved = ((idx%2)==0)
-            cur.execute(f" insert into crgr_mstr_info(chrstn_id, crgr_mid, crgr_stus_cd, etfn_chrg_crgd_yn, estb_year, estb_mm, lte_rotr_entityid, crgr_rsv_mode_cd  ) \
-            values('{chrstn_id}', '{crgr}', '04', 'Y', '2022', '06', 'ASN_CSE-D-{random.randrange(111111111,999999999)}d-EVSP', {'02' if reserved else '01'} )")
+            cur.execute(f" insert into crgr_mstr_info(chrstn_id, crgr_mid, crgr_stus_cd, etfn_chrg_crgd_yn, estb_year, "
+                        f" estb_mm, lte_rotr_entityid, crgr_rsv_mode_cd, chrg_divs_cd  ) " 
+                        f" values('{chrstn_id}', '{crgr}', '04', 'Y', '2022', '06', "
+                        f" 'ASN_CSE-D-{random.randrange(111111111,999999999)}d-EVSP', "
+                        f" {'02' if reserved else '01'}, '{connector}' )")
 
 
-def createCrgrs(chrstn_id = "115000001", crgr_count=0):
+def createCrgrs(chrstn_id = "115000001", crgr_count=0, connector="A"):
 
     with conn.cursor() as cur:
         for idx, crgr in enumerate(list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)]))):
             reserved = ((idx%2)==0)
-            connector = random.choice(['0A', '0B'])
+            connector = "0"+connector
             cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
             values('{crgr}', '{crgr+connector}', '{chrstn_id}', '{crgr[9:]}', 'Y')")
 
@@ -318,7 +321,7 @@ def geocoding(param):
 def convert_address(filename=None):
     import pandas as pd
     csv = pd.read_table(filename, sep="|", dtype={"우편번호": str, "건물번호본번":str})
-    slice_from, slice_to = 0, 1000_000
+    slice_from, slice_to = 0, 1_000_000
     csv = csv[slice_from:slice_to]
 
     del_idx = csv[csv['시군구용건물명'].isnull()].index

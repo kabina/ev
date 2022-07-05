@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 
-
 csvlist = []
 
 filename = "강원도"

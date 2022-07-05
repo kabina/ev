@@ -295,7 +295,6 @@ class Charger(Server):
         error_msg = None
 
         # 사용자 요금정보(Tariff) 처리
-
         if command == "dataTransferTariff":
             if "data" in response and "tariff" in response["data"] :
                 self.local_var["tariff"] = response["data"]["tariff"]
