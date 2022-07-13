@@ -16,7 +16,7 @@ urls = {
 }
 
 headers={
-        'Content-type':'application/json', 
+        'Content-type':'application/json',
         'Accept':'application/json',
         "Cache-Control": "no-cache",
         "Pragma": "no-cache"
@@ -125,7 +125,7 @@ api_params = { "bootNotification":{
         }, "stopTransaction":{
             "idTag":"1111222233335555",
             "meterStop":"0",
-            "reason":"Finished",
+            "reason":"Remote",
             "timestamp":"",
             "transactionId":"",
             # "transactionData":[{

@@ -3,7 +3,7 @@ import pandas as pd
 
 csvlist = []
 
-filename = "강원도"
+filename = "경기도"
 
 for file in os.listdir("po"):
     if file.startswith(f"{filename}.txt_변환완료") :

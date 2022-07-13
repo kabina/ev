@@ -137,16 +137,24 @@ def createChrstns(filename, region, chrstn_count=0, crgr_count=0):
 
             sql = f" insert into chrstn_info(chrstn_id, me_chrstn_id, chrstn_nm, chrstn_oprn_stus_cd, \
             cust_nm, area_ctdo, area_ccw, zpcd, badr, dadr, \
-            chrstn_rcpt_path_cd, aplc_nm, aplc_hpno, aplc_emal_addr, cust_kd_cd, cust_detl_kd_cd, lat, lot) \
+            chrstn_rcpt_path_cd, aplc_nm, aplc_hpno, aplc_emal_addr, cust_kd_cd, cust_detl_kd_cd, lat, lot, opn_stle_cd) \
             values('{chrstn}', '{chrstn[4:]:06}', 'U+{chr[3]}충전소', '{['04','05'][random.randrange(0,2)]}',\
-            '{get_name()}', '{juso[0]}', '{juso[1]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
-             '01', '{get_name()}', '{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}' )"
+            '{get_name()}', '{chrstn[0:2]}', '{chrstn[0:5]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
+             '01', '{get_name()}', '{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}', '02' )"
             cur.execute(sql)
+            # createCntcInfo(chrstn_id=chrstn)
             connector = random.choice(['A', 'C'])
             createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count, connector=connector)
             createCrgrs(chrstn_id = chrstn, crgr_count=crgr_count, connector=connector)
         conn.commit()
 
+def createCntcInfo(chrstn_id = "115000001"):
+    """충전소 계약정보 등록
+    """
+    with conn.cursor() as cur:
+        cur.execute(f" insert into chrstn_cntc_info(chrstn_id, cntc_sno, cntc_pgrs_stus_cd, chrstn_rcpt_path_cd,"
+                    f" estb_rqst_rcpt_no, cntc_divs_cd, invt_divs_cd, cntc_dt, cntc_strt_dt, cntc_end_dt, cntc_term_yy ) "
+                    f" values ( ) ")
 
 def createCrgrMsts(chrstn_id = "115000001", crgr_count=1, connector="A"):
     existCrgrMsts = [crgr[0] for crgr in getMCrgrs(chrstn_id)]
@@ -169,13 +177,13 @@ def createCrgrs(chrstn_id = "115000001", crgr_count=0, connector="A"):
     with conn.cursor() as cur:
         for idx, crgr in enumerate(list(set([chrstn_id+'{0:02d}'.format(i) for i in range(1,crgr_count)]))):
             reserved = ((idx%2)==0)
-            connector = "0"+connector
+            cntr = "0"+connector
             cur.execute(f" insert into crgr_info(crgr_mid, crgr_cid, chrstn_id, me_crgr_id, crgr_open_yn) \
-            values('{crgr}', '{crgr+connector}', '{chrstn_id}', '{crgr[9:]}', 'Y')")
+            values('{crgr}', '{crgr+cntr}', '{chrstn_id}', '{crgr[9:]}', 'Y')")
 
             if reserved :
                 cur.execute(f" insert into rsv_crgr_choc_info(rsv_plcy_uuid, crgr_cid) "                
-                            f" values('1, {crgr}', '{crgr + connector}' )")
+                            f" values('1, {crgr}', '{crgr + cntr}' )")
 
 
 def createRegionChrstns(start, end):
@@ -352,7 +360,7 @@ if __name__ == "__main__":
     # convert_address("po/강원도.txt")
 
     # createChrstns("충청북도_변환완료.csv", "43", chrstn_count=1000, crgr_count=10)
-    createChrstns("서울특별시_변환완료.csv", "11470", chrstn_count=10, crgr_count=10)
+    createChrstns("경기도_변환완료.csv", "4117110100", chrstn_count=1, crgr_count=10)
     # createChrstns("충청남도_변환완료.csv", "44", chrstn_count=1000, crgr_count=10)
     # createChrstns("경기도_변환완료.csv", "414", chrstn_count=100, crgr_count=10)
     # createChrstns("강원도_변환완료.csv", "42", chrstn_count=1000, crgr_count=20)

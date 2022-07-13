@@ -51,7 +51,6 @@ class Charger(Server):
         Server (Class): 서버 클래스의 abstract class inherit
 
     """
-
     def __init__(self, charger_id=None):
 
         if charger_id is None or len(charger_id) != 13:
@@ -109,6 +108,11 @@ class Charger(Server):
             "statusNotification_reason": lambda x: self.local_var[x],
         }
 
+    def reset_charger(self, charger_id, idTags):
+        self.local_var["X-EVC-BOX"] = charger_id[:13]
+        self.local_var["connectorId"] = charger_id[11:12]
+        self.local_var["idTag"] = random.choice(idTags)
+
     def init_local_var(self, ):
         fixed = [
             "vendorId",
@@ -146,7 +150,7 @@ class Charger(Server):
         self.sampled_value["cimport"] += random.uniform(-1, 1)
         self.sampled_value["voltage"] = self.sampled_value["voltage"] + random.uniform(-1, 1)
         self.sampled_value["eairegister"] = (self.sampled_value["eairegister"] +
-                                             random.randrange(995, 1050)) if command == "meterValues" else 0
+                                             random.randrange(9950, 10500)) if command == "meterValues" else 0
         self.sampled_value["soc"] = self.sampled_value["soc"]
         self.sampled_value["paimport"] += random.uniform(-1, 1)
 
@@ -341,6 +345,7 @@ class Charger(Server):
             self.sampled_value["eairegister"] = 0
             self.local_var["meterStart"] = self.local_var["cmeter"]
         if command == "stopTransaction" :
+
             self.local_var["meterStop"] = self.local_var["cmeter"]
             requests["meterStop"] = self.local_var["meterStop"]
 
@@ -382,7 +387,10 @@ class Charger(Server):
             return header
 
         # 기본 템플릿 기반으로 파라미터 설정
+        # if command == "stopTransaction" :
+        #     self.local_var["idTag"] = "4634407056130185"
         parameter = self.touch_parameter(parameter, command=command)
+
 
         # if status is not None:
         #     parameter["status"] = status
@@ -393,7 +401,7 @@ class Charger(Server):
         self.req_post_process(parameter, command)
 
         # header["Authorization"] = "Bearer {}".format(self.accessToken)
-        if command in ["bootNotification", "authorize", "dataTransferHeartbeat"]:
+        if command in ["bootNotification", "authorize", "dataTransferHeartbeat", "statusNotification"]:
             header = set_header(header, props.api_headers[command])
 
         data = json.dumps(parameter)
@@ -528,31 +536,28 @@ def main(charger_id="charger_01"):
     loop_cnt = 1
     print(f"시나리오: 총 {loop_cnt}회 충전 수행")
 
-    # for l in case_run(charger, scenario.error_just_after_boot):
+    # for l in case_run(charger, scenario.coupler_connect):
     #     ws.append(l)
 
     for _ in range(loop_cnt):
         for l in case_run(charger, scenario.normal_case):
             ws.append(l)
 
-    # for _ in range(loop_cnt):
-    #     for l in case_run(charger, scenario.normal_case_reserved):
-    #         ws.append(l)
-
-    # for _ in range(loop_cnt):
-    #     for l in case_run(charger, scenario.invalid_card_in_reserved):
-    #         ws.append(l)
-
-    # for _ in range(loop_cnt):
-    #     for l in case_run(charger, scenario.normal_case):
-    #         ws.append(l)
-
-    # for l in case_run(charger, scenario.normal_case_without_boot):
-    #     ws.append(l)
-
-    # for l in case_run(charger, scenario.error_in_charge):
-    #     ws.append(l)
-
+        # for l in case_run(charger, scenario.normal_case_reserved):
+        #         ws.append(l)
+        #
+        # for l in case_run(charger, scenario.invalid_card_in_reserved):
+        #         ws.append(l)
+        #
+        # for l in case_run(charger, scenario.normal_case_ing):
+        #         ws.append(l)
+        #
+        # for l in case_run(charger, scenario.normal_case_without_boot):
+        #     ws.append(l)
+        #
+        # for l in case_run(charger, scenario.error_in_charge):
+        #     ws.append(l)
+        charger.reset_charger(crgrList[random.randrange(0,len(crgrList))], idTags)
     # ws.append(case_run(charger, scenario.error_just_after_boot))
     # ws.append(case_run(charger, scenario.heartbeat_after_boot))
     # ws.append(case_run(charger, scenario.no_charge_after_authorize))
@@ -652,9 +657,27 @@ if __name__ == "__main__":
         1010010174366716 (로밍-미가입카드)
         1010010174721340 (로밍-가입카드)
         4677893456241782 (안창선)
+        4677893456241733 (안창선New)
+        crgr_mid;crgr_cid;me_crgr_id;chrstn_id;chrstn_cntc_no;crgr_open_yn;prcl_mttr;regt_id;reg_dttm;mfpn_id;upd_dttm
+        98001010101;980010101010A;01;112000222;
+        98001010101;980010101020A;02;112000222;
+        98001010101;980010101030A;03;112000222;
+        98001010201;980010102010A;01;112000222;
+        98001010202;980010102020A;02;112000222;
+        98001010203;980010102030A;03;112000222;
+        98001020101;980010201010A;01;112000222;
+        98001020102;980010201020A;02;112000222;
+        98001030101;980010301010A;01;112000222;
         """
-        idTags = ['4677893456241782'] # 1111222233334444, 4873600231574325(cust012-고정요금)
-        crgrList = ['112000012010A'] # 112000006240A, 114100005030A, 115000001010A, 112000006220B, 112000012010A, 114100005090A(예약)
+        idTags = ['4677893456241733', #'3333222233334444', '1010010174721340',
+                  #'1010010174366716', # 환경부 중지 카드
+                  #'1010010107409567', # 환경부 정상 카드
+                  #'1010010177777471', # 환경부 정상 카드(협약사)
+                  #'4873600231574325',
+                  #'4748664213640739', '4634407056130185'
+                  ] # 1111222233334444, 4873600231574325(cust012-고정요금)
+        crgrList = ['115000001010A' #, '114100005090A', '112000006240A'
+                    ] # 112000006240A, 114100005030A, 115000001010A, 112000006220B, 112000012010A, 114100005090A(예약)
 
     main()
 

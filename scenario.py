@@ -37,7 +37,7 @@ normal_case = [
     # ["meterValues"],
     # ["meterValues"],
     # ["meterValues"],
-    ["stopTransaction", "Finished"],
+    ["stopTransaction", "Remote"],
     ["statusNotification", "Finishing"],
     ["statusNotification", "Available"],
     ["dataTransferHeartbeat", None],
@@ -176,4 +176,22 @@ roaming_card_error = [
     ["bootNotification", "PowerUp"],
     ["statusNotification", "Available"],
     ["authorize"],
+]
+
+
+coupler_connect = [
+    ["statusNotification", "Preparing", "NoError", "None"],
+]
+
+
+## 일반 충전/종료 케이스
+normal_case_charging = [
+    ["bootNotification", "PowerUp"],
+    ["statusNotification", "Available", "NoError", "None"],
+    ["authorize"],
+    ["statusNotification", "Preparing"],
+    ["dataTransferTariff"],
+    ["startTransaction"],
+    ["statusNotification", "Charging"],
+    ["meterValues"],
 ]
