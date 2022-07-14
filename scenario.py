@@ -33,16 +33,16 @@ normal_case = [
     ["startTransaction"],
     ["statusNotification", "Charging"],
     ["meterValues"],
-    # ["meterValues"],
-    # ["meterValues"],
-    # ["meterValues"],
-    # ["meterValues"],
+    ["meterValues"],
+    ["meterValues"],
+    ["meterValues"],
+    ["meterValues"],
     ["stopTransaction", "Remote"],
     ["statusNotification", "Finishing"],
     ["statusNotification", "Available"],
     ["dataTransferHeartbeat", None],
-    # ["dataTransferHeartbeat", None],
-    # ["dataTransferHeartbeat", None],
+    ["dataTransferHeartbeat", None],
+    ["dataTransferHeartbeat", None],
 ]
 normal_case_reserved = [
     ["bootNotification", "PowerUp"],
@@ -132,7 +132,10 @@ error_just_after_boot = [
 # 부팅 후 대기 중
 heartbeat_after_boot = [
     ["bootNotification", "LocalReset"],
-    ["statusNotification", "Available", "NoError", "None"],
+    # ["statusNotification", "Available", "NoError", "None"],
+    ["dataTransferHeartbeat", None],
+    ["dataTransferHeartbeat", None],
+    ["dataTransferHeartbeat", None],
     ["dataTransferHeartbeat", None],
 ]
 

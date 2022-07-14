@@ -30,7 +30,7 @@ from tqdm import tqdm
 """랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
 """
 idTags = None
-SLEEP = 1
+SLEEP = 10
 logger = Logger()
 global evlogger
 evlogger = logger.initLogger(loglevel=logging.INFO)

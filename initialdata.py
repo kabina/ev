@@ -142,7 +142,7 @@ def createChrstns(filename, region, chrstn_count=0, crgr_count=0):
             '{get_name()}', '{chrstn[0:2]}', '{chrstn[0:5]}', '{chr[0]}', '{chr[1]}', '{chr[1]}', \
              '01', '{get_name()}', '{get_tel_no()}', '{get_email()}', '01', '01', '{lot}', '{lat}', '02' )"
             cur.execute(sql)
-            # createCntcInfo(chrstn_id=chrstn)
+            createCntcInfo(chrstn_id=chrstn)
             connector = random.choice(['A', 'C'])
             createCrgrMsts(chrstn_id=chrstn, crgr_count=crgr_count, connector=connector)
             createCrgrs(chrstn_id = chrstn, crgr_count=crgr_count, connector=connector)
@@ -153,8 +153,10 @@ def createCntcInfo(chrstn_id = "115000001"):
     """
     with conn.cursor() as cur:
         cur.execute(f" insert into chrstn_cntc_info(chrstn_id, cntc_sno, cntc_pgrs_stus_cd, chrstn_rcpt_path_cd,"
-                    f" estb_rqst_rcpt_no, cntc_divs_cd, invt_divs_cd, cntc_dt, cntc_strt_dt, cntc_end_dt, cntc_term_yy ) "
-                    f" values ( ) ")
+                    f" estb_rqst_rcpt_no, cntc_divs_cd, invt_divs_cd, cntc_dt, cntc_strt_dt, cntc_end_dt ) "
+                    f" values ( '{chrstn_id}', 1, '01', '01',"
+                    f" '{datetime.datetime.now().strftime('%Y%m%d')}001', '01', '01', '{datetime.datetime.now().isoformat()}', "
+                    f" '{datetime.datetime.now().isoformat()}', '{datetime.datetime.now().isoformat()}' ) ")
 
 def createCrgrMsts(chrstn_id = "115000001", crgr_count=1, connector="A"):
     existCrgrMsts = [crgr[0] for crgr in getMCrgrs(chrstn_id)]
@@ -360,7 +362,7 @@ if __name__ == "__main__":
     # convert_address("po/강원도.txt")
 
     # createChrstns("충청북도_변환완료.csv", "43", chrstn_count=1000, crgr_count=10)
-    createChrstns("경기도_변환완료.csv", "4117110100", chrstn_count=1, crgr_count=10)
+    createChrstns("서울특별시_변환완료.csv", "1126", chrstn_count=1, crgr_count=10)
     # createChrstns("충청남도_변환완료.csv", "44", chrstn_count=1000, crgr_count=10)
     # createChrstns("경기도_변환완료.csv", "414", chrstn_count=100, crgr_count=10)
     # createChrstns("강원도_변환완료.csv", "42", chrstn_count=1000, crgr_count=20)
