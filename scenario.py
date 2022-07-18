@@ -44,6 +44,21 @@ normal_case = [
     ["dataTransferHeartbeat", None],
     ["dataTransferHeartbeat", None],
 ]
+app_charging_case = [
+    ["statusNotification", "Charging", "NoError", "None"],
+    ["meterValues"],
+    # ["meterValues"],
+    # ["meterValues"],
+    # ["meterValues"],
+    # ["meterValues"],
+    ["stopTransaction", "Remote"],
+    ["statusNotification", "Finishing"],
+    ["statusNotification", "Available"],
+    ["dataTransferHeartbeat", None],
+    ["dataTransferHeartbeat", None],
+    ["dataTransferHeartbeat", None],
+]
+
 normal_case_reserved = [
     ["bootNotification", "PowerUp"],
     ["statusNotification", "Reserved", "NoError", "None"],

@@ -30,7 +30,7 @@ from tqdm import tqdm
 """랜덤으로 ID태깅이 이루어 지는 경우 사용될 테스트 ID들
 """
 idTags = None
-SLEEP = 10
+SLEEP = 1
 logger = Logger()
 global evlogger
 evlogger = logger.initLogger(loglevel=logging.INFO)
@@ -41,6 +41,52 @@ class Server(metaclass=ABCMeta):
     def make_request(self, request_type):
         pass
 
+
+def getConnection():
+    import pymysql
+    conn = pymysql.connect(host="rds-aurora-mysql-ev-charger-svc-instance-0.cnjsh2ose5fj.ap-northeast-2.rds.amazonaws.com",
+                           user='evsp_usr', password='evspuser!!', db='evsp', charset='utf8', port=3306)
+
+    return conn
+
+
+def getCards():
+
+    with conn.cursor() as cur:
+        cur.execute(" select b.mbr_card_no "+
+                    " from mbr_info a "+
+                    " inner join mbr_card_isu_info b "+
+                    " on a.mbr_id = b.mbr_id "+
+                    " where b.card_stus_cd = '01'")
+        return cur.fetchall()
+
+
+def getCrgrs(chrstn_id = None):
+
+    with conn.cursor() as cur:
+        sql = " select b.crgr_cid " \
+              " from crgr_mstr_info a " \
+              " inner join crgr_info b " \
+              " on a.crgr_mid = b.crgr_mid " \
+              " where a.crgr_stus_cd = '04' and b.crgr_cid like '%A'"
+
+        if chrstn_id :
+            sql = sql + f" and a.chrstn_id = '{chrstn_id}' "
+        cur.execute(sql)
+
+        return cur.fetchall()
+
+def getMCrgrs(chrstn_id = None):
+
+    with conn.cursor() as cur:
+        sql = " select crgr_mid " \
+              " from crgr_mstr_info "
+
+        if chrstn_id :
+            sql = sql + f" where chrstn_id = '{chrstn_id}' "
+        cur.execute(sql)
+
+        return cur.fetchall()
 
 class Charger(Server):
     """충전기 클래스 선언
@@ -415,6 +461,7 @@ class Charger(Server):
 
         if response.status_code in [503, 404, 403, 500, 401]:
             evlogger.error("Internal Service Error or No Available Service. [{}]".format(response.status_code))
+            evlogger.info(response.json())
             self.local_var["status"] = "ServerError"
         else:
             response = response.json()
@@ -540,7 +587,7 @@ def main(charger_id="charger_01"):
     #     ws.append(l)
 
     for _ in range(loop_cnt):
-        for l in case_run(charger, scenario.normal_case):
+        for l in case_run(charger, scenario.app_charging_case):
             ws.append(l)
 
         # for l in case_run(charger, scenario.normal_case_reserved):
@@ -592,52 +639,6 @@ def getWorkList():
 
     return work_list
 
-def getConnection():
-    import pymysql
-    conn = pymysql.connect(host="rds-aurora-mysql-ev-charger-svc-instance-0.cnjsh2ose5fj.ap-northeast-2.rds.amazonaws.com",
-                           user='evsp_usr', password='evspuser!!', db='evsp', charset='utf8', port=3306)
-
-    return conn
-
-
-def getCards():
-
-    with conn.cursor() as cur:
-        cur.execute(" select b.mbr_card_no "+
-                    " from mbr_info a "+
-                    " inner join mbr_card_isu_info b "+
-                    " on a.mbr_id = b.mbr_id "+
-                    " where b.card_stus_cd = '01'")
-        return cur.fetchall()
-
-
-def getCrgrs(chrstn_id = None):
-
-    with conn.cursor() as cur:
-        sql = " select b.crgr_cid " \
-              " from crgr_mstr_info a " \
-              " inner join crgr_info b " \
-              " on a.crgr_mid = b.crgr_mid " \
-              " where a.crgr_stus_cd = '04' and b.crgr_cid like '%A'"
-
-        if chrstn_id :
-            sql = sql + f" and a.chrstn_id = '{chrstn_id}' "
-        cur.execute(sql)
-
-        return cur.fetchall()
-
-def getMCrgrs(chrstn_id = None):
-
-    with conn.cursor() as cur:
-        sql = " select crgr_mid " \
-              " from crgr_mstr_info "
-
-        if chrstn_id :
-            sql = sql + f" where chrstn_id = '{chrstn_id}' "
-        cur.execute(sql)
-
-        return cur.fetchall()
-
 if __name__ == "__main__":
     DBCONN = False
 
@@ -676,7 +677,7 @@ if __name__ == "__main__":
                   #'4873600231574325',
                   #'4748664213640739', '4634407056130185'
                   ] # 1111222233334444, 4873600231574325(cust012-고정요금)
-        crgrList = ['115000001010A' #, '114100005090A', '112000006240A'
+        crgrList = ['115000002010A' #, '114100005090A', '112000006240A'
                     ] # 112000006240A, 114100005030A, 115000001010A, 112000006220B, 112000012010A, 114100005090A(예약)
 
     main()
